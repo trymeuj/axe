@@ -1,0 +1,8 @@
+/* Injected by Axe content script — minimal global overrides */
+#axe-sidebar-container {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+#axe-toggle:hover {
+  background: #111 !important;
+}

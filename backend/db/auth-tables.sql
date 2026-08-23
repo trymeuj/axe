@@ -1,0 +1,2 @@
+-- X OAuth / Auth.js tables are intentionally not used by the public-account MVP.
+-- This placeholder remains only to make the decision explicit for older setups.

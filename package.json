@@ -1,0 +1,12 @@
+{
+  "name": "axe",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "install:all": "npm --prefix backend install && npm --prefix extension install",
+    "dev:backend": "npm --prefix backend run dev",
+    "build:backend": "npm --prefix backend run build",
+    "build:extension": "npm --prefix extension run build",
+    "build": "npm run build:backend && npm run build:extension"
+  }
+}
