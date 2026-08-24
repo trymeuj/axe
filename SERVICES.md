@@ -6,11 +6,11 @@ Last live check: 2026-08-24
 
 | Service | Purpose | Current implementation | Live status |
 |---|---|---|---|
-| TwitterAPI.io | Fetch public X profiles, timelines, posts, and public engagement data | Used by the active `/api/v0` routes | Active; authenticated profile request succeeded |
+| TwitterAPI.io | Fetch public X profiles, timelines, posts, and public engagement data | Used by the active `/api/v0` routes | Credentials are valid, but production requests currently fail because the account has insufficient credits |
 | OpenAI API | Creator analysis, topic extraction, idea support, and framing support | `gpt-4o-mini` currently powers creator analysis and reply ideas | Active; minimal completion request succeeded |
-| Next.js backend | Protect keys and coordinate X-data and LLM requests | Local backend in `backend/`; extension targets `http://localhost:3000` | Development server and production build succeed |
+| Next.js backend | Protect keys and coordinate X-data and LLM requests | Local backend in `backend/`; production alias is `https://axe-psi.vercel.app` | Production deployment is public; build and OpenAI route succeed |
 | Browser extension | Axe interface inside X | React/Vite extension in `extension/` | Build succeeds |
-| Neon PostgreSQL through Vercel Marketplace | Persist users, analyses, refreshes, ideas, and feedback | Planned replacement for the invalid legacy Supabase connection; active `/api/v0` flow still uses local storage | Not provisioned for Axe yet |
+| Neon PostgreSQL through Vercel Marketplace | Persist users, analyses, refreshes, ideas, and feedback | Connected to Production, Preview, and Development; active `/api/v0` flow still uses local storage | Active; database connection verified and Axe schema applied |
 
 ## Configured but out of scope
 

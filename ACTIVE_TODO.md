@@ -24,7 +24,8 @@ These are foundations, not completion of Mode 1 or Mode 2.
 - [ ] Select top-performing creator posts using relative performance rather than likes alone
 - [ ] Add useful public-account personalization based on the user's own posts and performance
 - [ ] Persist the MVP data reliably for the user instead of depending only on extension-local storage
-- [ ] Provision Neon PostgreSQL through the Axe Vercel project and replace the invalid legacy Supabase connection
+- [x] Provision Neon PostgreSQL through the Axe Vercel project and replace the invalid legacy Supabase connection
+- [ ] Recharge TwitterAPI.io credits so production X-data requests succeed
 - [ ] Keep the MVP public-account-only; do not add X OAuth
 - [ ] Remove or redesign existing features that do not serve the two core modes
 

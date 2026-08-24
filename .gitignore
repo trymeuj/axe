@@ -5,6 +5,7 @@
 .env
 .env.*
 !.env.example
+!extension/.env.production
 
 # Dependencies and generated output
 node_modules/
