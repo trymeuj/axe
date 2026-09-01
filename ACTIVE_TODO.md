@@ -1,69 +1,103 @@
 # Axe Active To-Do
 
-Last reviewed: 2026-08-24
+Last reviewed: 2026-09-01
 
-This is the active implementation checklist for the current Axe MVP. Keep tasks broad until the product behavior is decided in more detail. Check items off only when the user-facing flow works end to end.
+This checklist reflects Axe as it exists now and the work required to put it in front of the first ten users. Product principles and decisions live in [PRODUCT_DIRECTION.md](./PRODUCT_DIRECTION.md). Service status lives in [SERVICES.md](./SERVICES.md).
 
-Product principles and decisions live in [PRODUCT_DIRECTION.md](./PRODUCT_DIRECTION.md).
-External dependencies and their latest live status are tracked in [SERVICES.md](./SERVICES.md).
+## Current alpha product
 
-## Foundation already present
+- [x] Inject Axe as a 500px Brave/Chrome sidebar on X
+- [x] Keep the alpha public-account-only with no X OAuth
+- [x] Add and remove tracked creators without an alpha limit
+- [x] Search for creators using only TwitterAPI.io account-search results
+- [x] Save tracked creators, fetched results, active Idea Slate, list position, and drafts locally in the extension
+- [x] Remove the automatic creator analysis that previously ran when adding a creator
+- [x] Remove the unused My Voice section and Live indicator
+- [x] Separate creator management from the daily post feed with **Posts** and **Creators** tabs
 
-- [x] Brave/Chrome extension that injects an Axe sidebar into X
-- [x] Add and remove up to five inspiration creators
-- [x] Fetch a public creator profile and recent public posts
-- [x] Run a basic one-time AI analysis that returns topics, general patterns, posting frequency, and top posts
-- [x] Save tracked creators and their current analysis in extension-local storage
-- [x] Fetch the user's public profile and a small set of recent posts from their username
+## Recent reply-opportunity feed
 
-These are foundations, not completion of Mode 1 or Mode 2.
+- [x] Fetch each creator's public timeline on demand and keep only original posts from the last 48 hours for reply opportunities
+- [x] Exclude retweets as well as replies so every candidate is the tracked creator's own post
+- [x] Rank posts independently within each creator, then combine every creator's candidates into one feed
+- [x] Calculate traction as `likes + 2 × reposts + 3 × replies`
+- [x] Apply reply-opportunity multipliers of `1.0` under 6 hours, `0.6` at 6–24 hours, and `0.2` at 24–48 hours
+- [x] Exclude posts older than 48 hours instead of filling the list with stale opportunities
+- [x] Show an explicit no-recent-opportunities state when the combined feed has no eligible posts
+- [x] Select up to eight eligible posts per creator, send all candidates to the LLM, and show the top 20 combined posts
+- [x] Keep candidate selection and global ordering deterministic in the backend
+- [x] Fetch tracked creators concurrently and keep successful results when an individual creator fetch fails
+- [x] Save successful combined refreshes locally, display their timestamp, and enforce an eight-hour refresh cooldown
+- [x] Discard incompatible or corrupted cached discoveries instead of showing results created by older mapping logic
+- [x] Use GPT-5.6 Terra with low reasoning effort for the single combined call that creates faithful titles, mini-posts, Hot selection, and reply guidance
+- [x] Match every LLM result to backend source data by exact post ID and reject unknown, duplicate, or missing IDs
+- [x] Show the eligible results as clickable Inspiration Cards
+- [x] Clicking a card opens its exact source post on X while preserving the active Idea Slate and previous list position across navigation
 
-## Product foundation to improve
+## Reply guidance and Idea Slate
 
-- [ ] Replace the current general creator analysis with a meaningful writing-pattern profile based on strong posts versus ordinary posts
-- [ ] Select top-performing creator posts using relative performance rather than likes alone
-- [ ] Add useful public-account personalization based on the user's own posts and performance
-- [ ] Persist the MVP data reliably for the user instead of depending only on extension-local storage
-- [x] Provision Neon PostgreSQL through the Axe Vercel project and replace the invalid legacy Supabase connection
-- [ ] Recharge TwitterAPI.io credits so production X-data requests succeed
-- [ ] Keep the MVP public-account-only; do not add X OAuth
-- [ ] Remove or redesign existing features that do not serve the two core modes
+- [x] Ask the LLM to mark up to four genuinely strong opportunities as **Hot**, without filling a quota
+- [x] Hold every direction to a high bar and allow zero directions when nothing useful qualifies
+- [x] Reject generic praise, restatements, forced disagreement, answered questions, and invented experience
+- [x] Show **Hot** only on the strongest few posts and remove the random **Worth replying** label
+- [x] Generate up to three short, casual creator-note directions for a post, with no required minimum
+- [x] Optimize directions as audience-facing public mini-posts, preferring observations, extensions, examples, analogies, contrasts, counterpoints, or natural wit over creator-directed questions
+- [x] Use questions only occasionally and only when ordinary readers are likely to answer them
+- [x] Avoid polished AI language such as “discuss,” “introduce,” “explore,” and “consider”
+- [x] Include a short inline “something like” example with each direction
+- [x] Open an Idea Slate when an Inspiration Card is selected
+- [x] Provide an autosaving writing box with character count
+- [x] Provide a working **Copy post** action
+- [x] Keep the Idea Slate open when the user views the original post in the same X tab
 
-## Mode 1 — Help me find an idea
+## Must complete before the first external tester
 
-- [ ] Add an explicit user-triggered **Refresh inspiration** flow
-- [ ] Fetch and filter approximately the previous seven days of posts from selected inspiration creators
-- [ ] Rank recent material using recency, relative performance, relevance, and usefulness
-- [ ] Turn the selected material into idea cards rather than finished posts
-- [ ] Personalize idea cards using the user's public account, topics, and posting history
-- [ ] Let the user select, save, dismiss, or develop an idea
-- [ ] Ensure the complete Mode 1 flow works inside the extension
+- [x] Build the first responsive Axe landing page in the existing backend/Vercel app
+- [x] Rework the landing page into an X-native timeline using a sourced creator post and familiar interaction motion
+- [x] Select unlisted Chrome Web Store distribution for the alpha
+- [x] Create local Privacy, Terms, and Support pages and connect them from the landing-page footer
+- [ ] Review the current API routes and protect paid TwitterAPI.io/OpenAI endpoints from unrestricted public use
+- [ ] Add a simple per-user or per-install usage allowance suitable for the first ten users
+- [ ] Finish Chrome Web Store developer registration and payment
+- [ ] Publish privacy, terms, and support pages on the Axe domain
+- [ ] Prepare the Chrome Web Store icon, screenshots, descriptions, privacy disclosures, and permission explanations
+- [ ] Submit the extension as an unlisted Chrome Web Store listing and address any review feedback
+- [ ] Push the complete current local work to GitHub
+- [ ] Deploy the latest backend to Vercel
+- [ ] Verify TwitterAPI.io, OpenAI, and the ranked-post endpoint against the production deployment
+- [ ] Build the extension in production mode so it points to the Vercel backend instead of `localhost:3000`
+- [ ] Test installation and the complete workflow from a clean Brave profile
+- [ ] Test creator search, refresh, source navigation, restored Idea Slate, draft persistence, and Copy post in production
+- [ ] Write a short installation and first-use guide
+- [ ] Add a lightweight way for testers to report bad cards, bad directions, and product confusion
 
-## Mode 2 — Help me frame an idea
+## First-ten-user rollout
 
-- [ ] Let the user enter a rough thought, observation, experience, or selected Mode 1 idea
-- [ ] Let the user choose which inspiration creators should influence the framing
-- [ ] Use stored creator writing patterns to produce several framing approaches
-- [ ] Return only creative scaffolding: openings, structure, questions, evidence prompts, contrasts, closing directions, and short phrase fragments
-- [ ] Prevent the AI and interface from producing a finished copy-paste post
-- [ ] Give the user a simple place to develop or transfer the idea into the X composer
-- [ ] Ensure the complete Mode 2 flow works inside the extension
+- [ ] Invite two trusted testers first
+- [ ] Watch at least one tester use Axe without live guidance
+- [ ] Record where onboarding or the core workflow breaks
+- [ ] Fix critical reliability and comprehension issues
+- [ ] Expand access gradually to ten users
+- [ ] Measure whether users return, open Inspiration Cards, write drafts, and copy posts
+- [ ] Decide after the alpha whether Axe is useful and sellable enough to continue
 
-## Ten-user readiness
+## Later, after the alpha proves value
 
-- [x] Make the backend and extension build successfully together
-- [ ] Protect API keys and prevent unrestricted public use of paid endpoints
-- [ ] Add simple error, loading, retry, and empty states for the two modes
-- [ ] Capture lightweight feedback about which ideas and framing suggestions were useful
-- [ ] Test the complete workflow personally before inviting early users
-- [ ] Prepare a simple setup/onboarding path for the first ten users
+- [ ] Decide whether to build the original second mode for framing a user's rough idea
+- [ ] Decide whether creator writing-pattern analysis adds meaningful value
+- [ ] Reconsider public-account personalization only if testers need it
+- [ ] Move local creator/results/draft data into Neon only if cross-device or account persistence becomes necessary
+- [ ] Decide whether to make the Chrome Web Store listing public after the alpha
 
-## Explicitly out of scope for now
+## Explicitly out of scope for this alpha
 
 - X OAuth or private-account metrics
-- Automatic publishing to X
-- Real-time creator monitoring
-- Background refresh jobs
-- Fine-tuning, embeddings, or vector databases
-- Scale optimization beyond approximately ten users
+- My Voice/account-analysis interface
+- Creator-size normalization or relative-to-average performance scoring
+- Inspecting engagement on individual replies
+- Real-time monitoring or background refresh jobs
+- Automatic posting to X
+- Finished AI-written replies or posts
+- Fine-tuning, embeddings, or a vector database
+- Scale work beyond approximately ten users
 - Complicated plans, teams, or enterprise features

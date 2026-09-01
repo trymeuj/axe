@@ -1,759 +1,585 @@
 import { useEffect, useState } from "react";
-import type { ReactNode } from "react";
-import { api, type Creator, type MeResponse, type ReplyIdea } from "../lib/api";
-import { getMyUsername, setMyUsername, getTrackedCreators, setTrackedCreators } from "../lib/storage";
-import { getCurrentTweetContext, isOnTweetPage } from "../lib/twitter";
+import {
+  api,
+  type CombinedDiscovery,
+  type CombinedPost,
+  type Creator,
+  type CreatorSearchResult,
+} from "../lib/api";
+import {
+  getCombinedDiscovery,
+  getTrackedCreators,
+  setCombinedDiscovery,
+  setTrackedCreators,
+} from "../lib/storage";
 
-type View = "home" | "creator" | "me";
+type Tab = "posts" | "creators";
+type IdeaSelection = { creator: Creator; topic: CombinedPost };
+
+const ACTIVE_IDEA_KEY = "axe_active_idea";
+const POSTS_SCROLL_KEY = "axe_posts_scroll";
+const REFRESH_COOLDOWN_MS = 8 * 60 * 60 * 1000;
+
+function getSavedIdea(): IdeaSelection | null {
+  try {
+    const saved = localStorage.getItem(ACTIVE_IDEA_KEY);
+    return saved ? JSON.parse(saved) as IdeaSelection : null;
+  } catch {
+    return null;
+  }
+}
 
 export default function Sidebar() {
-  const [view, setView] = useState<View>("home");
-  const [me, setMe] = useState<MeResponse | null>(null);
-  const [meLoading, setMeLoading] = useState(false);
-  const [creators, setCreators] = useState<Creator[]>(() => getTrackedCreators());
-  const [selectedCreator, setSelectedCreator] = useState<Creator | null>(null);
-  const [replyIdeas, setReplyIdeas] = useState<ReplyIdea[]>([]);
-  const [replyLoading, setReplyLoading] = useState(false);
-  const [addUsername, setAddUsername] = useState("");
-  const [addLoading, setAddLoading] = useState(false);
-  const [addError, setAddError] = useState("");
-  const [myUsername, setMyUsernameState] = useState(() => getMyUsername());
+  const [tab, setTab] = useState<Tab>("posts");
+  const [creators, setCreators] = useState<Creator[]>(getTrackedCreators);
+  const [discovery, setDiscovery] = useState<CombinedDiscovery | null>(getCombinedDiscovery);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshError, setRefreshError] = useState("");
+  const [selectedIdea, setSelectedIdea] = useState<IdeaSelection | null>(getSavedIdea);
 
-  useEffect(() => { setTrackedCreators(creators); }, [creators]);
+  useEffect(() => setTrackedCreators(creators), [creators]);
 
-  useEffect(() => {
-    if (!myUsername.trim()) { setMe(null); return; }
-    setMeLoading(true);
-    api.getUserStats(myUsername)
-      .then(setMe).catch(() => setMe(null)).finally(() => setMeLoading(false));
-  }, [myUsername]);
-
-  useEffect(() => {
-    if (!creators.length) return;
-    const check = () => {
-      if (!isOnTweetPage()) { setReplyIdeas([]); return; }
-      const ctx = getCurrentTweetContext();
-      if (!ctx) return;
-      const matched = creators.find(
-        c => c.creatorUsername.toLowerCase() === ctx.authorUsername.toLowerCase()
-      );
-      if (!matched) return;
-      setReplyLoading(true);
-      api.getReplyIdeas(ctx.tweetText, ctx.authorUsername, me?.followersCount ?? 0)
-        .then(res => setReplyIdeas(res.ideas))
-        .catch(() => setReplyIdeas([]))
-        .finally(() => setReplyLoading(false));
-    };
-    check();
-    const obs = new MutationObserver(check);
-    obs.observe(document.body, { childList: true, subtree: true });
-    return () => obs.disconnect();
-  }, [creators, me?.followersCount]);
-
-  const handleAdd = async () => {
-    if (!addUsername.trim()) return;
-    setAddLoading(true);
-    setAddError("");
-    const username = addUsername.trim().replace("@", "");
-    try {
-      const { creator } = await api.getCreatorProfile(username);
-      if (creators.some(c => c.creatorUsername.toLowerCase() === creator.creatorUsername.toLowerCase())) {
-        setAddError("Already tracking this creator");
-        setAddLoading(false);
-        return;
-      }
-      if (creators.length >= 5) {
-        setAddError("Max 5 creators");
-        setAddLoading(false);
-        return;
-      }
-      const newCreator: Creator = { ...creator, insight: null, paused: false };
-      setCreators(prev => [...prev, newCreator]);
-      setAddUsername("");
-      setAddLoading(false);
-      const added = creator.creatorUsername;
-      api.getCreatorInsights(username)
-        .then(({ insight }) => {
-          setCreators(prev =>
-            prev.map(c => c.creatorUsername.toLowerCase() === added.toLowerCase() ? { ...c, insight } : c)
-          );
-        }).catch(() => {});
-    } catch (e: unknown) {
-      setAddError(e instanceof Error ? e.message : "Failed to add creator");
-      setAddLoading(false);
-    }
+  const selectIdea = (creator: Creator, topic: CombinedPost) => {
+    const selection = { creator, topic };
+    localStorage.setItem(POSTS_SCROLL_KEY, String(window.scrollY));
+    localStorage.setItem(ACTIVE_IDEA_KEY, JSON.stringify(selection));
+    setSelectedIdea(selection);
   };
 
-  const switchView = (v: View) => {
-    setView(v);
-    if (v === "me" && myUsername && !me && !meLoading) {
-      setMeLoading(true);
-      api.getUserStats(myUsername).then(setMe).catch(() => setMe(null)).finally(() => setMeLoading(false));
+  const closeIdea = () => {
+    localStorage.removeItem(ACTIVE_IDEA_KEY);
+    setSelectedIdea(null);
+    setTab("posts");
+    window.setTimeout(() => {
+      const savedPosition = Number(localStorage.getItem(POSTS_SCROLL_KEY) ?? 0);
+      window.scrollTo({ top: savedPosition, behavior: "instant" });
+    }, 0);
+  };
+
+  const switchTab = (nextTab: Tab) => {
+    if (selectedIdea) localStorage.removeItem(ACTIVE_IDEA_KEY);
+    setSelectedIdea(null);
+    setTab(nextTab);
+  };
+
+  const refreshPosts = async () => {
+    if (refreshing || creators.length === 0) return;
+    if (discovery && Date.now() < new Date(discovery.refreshedAt).getTime() + REFRESH_COOLDOWN_MS) return;
+
+    setRefreshing(true);
+    setRefreshError("");
+    try {
+      const result = await api.discoverPosts(creators.map((creator) => creator.creatorUsername));
+      setDiscovery(result);
+      setCombinedDiscovery(result);
+    } catch (error) {
+      setRefreshError(error instanceof Error ? error.message : "Could not find posts right now.");
+    } finally {
+      setRefreshing(false);
     }
   };
 
   return (
-    <div className="flex flex-col h-full bg-black text-[#E7E9EA]" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
-
-      {/* ── Header ── */}
-      <header className="flex-shrink-0 border-b border-[#2F3336]">
-        <div className="flex items-center justify-between px-4 pt-3.5 pb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-[#1D9BF0] flex items-center justify-center flex-shrink-0">
-              <span style={{ color: "#000", fontWeight: 900, fontSize: 13, lineHeight: 1 }}>A</span>
-            </div>
-            <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.02em", color: "#E7E9EA" }}>Axe</span>
+    <div className="axe-shell">
+      <header className="axe-header">
+        {selectedIdea ? (
+          <div className="axe-slate-header">
+            <button onClick={closeIdea} aria-label="Back to posts"><BackIcon /></button>
+            <h1>Idea slate</h1>
           </div>
-        </div>
-        <nav className="flex px-0">
-          {(["home", "me"] as const).map(v => (
-            <button
-              key={v}
-              onClick={() => switchView(v)}
-              className="flex-1 py-3 transition-colors"
-              style={{
-                fontSize: 14,
-                fontWeight: 600,
-                color: view === v ? "#E7E9EA" : "#71767B",
-                borderBottom: view === v ? "2px solid #1D9BF0" : "2px solid transparent",
-                background: "none",
-              }}
-            >
-              {v === "home" ? "Creators" : "Me"}
-            </button>
-          ))}
-        </nav>
-      </header>
-
-      {/* ── Reply ideas strip ── */}
-      {(replyLoading || replyIdeas.length > 0) && (
-        <div className="flex-shrink-0 border-b border-[#2F3336]" style={{ background: "#0A0F14" }}>
-          {replyLoading ? (
-            <div className="flex items-center gap-2.5 px-4 py-3">
-              <div className="w-3.5 h-3.5 rounded-full border-2 border-[#2F3336] border-t-[#1D9BF0] animate-spin flex-shrink-0" />
-              <span style={{ fontSize: 12, color: "#71767B" }}>Finding reply angles...</span>
-            </div>
-          ) : (
-            <div className="px-4 py-3.5">
-              <p style={{ fontSize: 10, fontWeight: 700, color: "#1D9BF0", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
-                ⚡ Reply angles
-              </p>
-              <div className="flex flex-col gap-2.5">
-                {replyIdeas.map((idea, i) => <ReplyCard key={i} idea={idea} />)}
+        ) : (
+          <>
+            <div className="axe-brand-row">
+              <div className="axe-brand">
+                <div className="axe-logo"><span>A</span></div>
+                <p className="axe-name">Axe</p>
               </div>
             </div>
-          )}
-        </div>
-      )}
+          <nav className="axe-tabs axe-product-tabs" aria-label="Axe sections">
+            <button className={tab === "posts" ? "active" : ""} onClick={() => switchTab("posts")}>Posts</button>
+            <button className={tab === "creators" ? "active" : ""} onClick={() => switchTab("creators")}>Creators</button>
+            <span className={`axe-tab-indicator ${tab === "creators" ? "right" : ""}`} />
+          </nav>
+          </>
+        )}
+      </header>
 
-      {/* ── Main ── */}
-      <div className="flex-1 overflow-y-auto">
-        {view === "home" && (
-          <HomeView
+      <main className="axe-main">
+        {selectedIdea ? (
+          <IdeaSlate selection={selectedIdea} />
+        ) : tab === "posts" ? (
+          <PostsView
             creators={creators}
-            addUsername={addUsername}
-            setAddUsername={setAddUsername}
-            addLoading={addLoading}
-            addError={addError}
-            onAdd={handleAdd}
-            onSelect={c => { setSelectedCreator(c); setView("creator"); }}
-            onUntrack={xId => setCreators(prev => prev.filter(c => c.creatorXId !== xId))}
-            onPause={xId => setCreators(prev => prev.map(c => c.creatorXId === xId ? { ...c, paused: !c.paused } : c))}
+            discovery={discovery}
+            refreshing={refreshing}
+            error={refreshError}
+            onRefresh={refreshPosts}
+            onOpenCreators={() => switchTab("creators")}
+            onSelectIdea={selectIdea}
+          />
+        ) : (
+          <CreatorsView
+            creators={creators}
+            onCreatorsChange={setCreators}
           />
         )}
-        {view === "creator" && selectedCreator && (
-          <CreatorView
-            creator={selectedCreator}
-            onBack={() => setView("home")}
-            onUntrack={() => { setCreators(prev => prev.filter(c => c.creatorXId !== selectedCreator.creatorXId)); setView("home"); }}
-            onPause={() => {
-              setCreators(prev => prev.map(c => c.creatorXId === selectedCreator.creatorXId ? { ...c, paused: !c.paused } : c));
-              setSelectedCreator(prev => prev ? { ...prev, paused: !prev.paused } : null);
-            }}
-          />
-        )}
-        {view === "me" && (
-          <MeView
-            me={me}
-            meLoading={meLoading}
-            myUsername={myUsername}
-            onUsernameChange={u => { setMyUsernameState(u); setMyUsername(u); }}
-          />
-        )}
-      </div>
+      </main>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Home View
-// ─────────────────────────────────────────────────────────────────────────────
-
-function HomeView({
-  creators, addUsername, setAddUsername, addLoading, addError,
-  onAdd, onSelect, onUntrack, onPause,
+function PostsView({
+  creators,
+  discovery,
+  refreshing,
+  error,
+  onRefresh,
+  onOpenCreators,
+  onSelectIdea,
 }: {
   creators: Creator[];
-  addUsername: string;
-  setAddUsername: (v: string) => void;
-  addLoading: boolean;
-  addError: string;
-  onAdd: () => void;
-  onSelect: (c: Creator) => void;
-  onUntrack: (xId: string) => void;
-  onPause: (xId: string) => void;
+  discovery: CombinedDiscovery | null;
+  refreshing: boolean;
+  error: string;
+  onRefresh: () => void;
+  onOpenCreators: () => void;
+  onSelectIdea: (creator: Creator, topic: CombinedPost) => void;
 }) {
-  return (
-    <div>
-      {/* Input row */}
-      <div className="px-4 py-3 border-b border-[#2F3336]">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={addUsername}
-            onChange={e => setAddUsername(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && onAdd()}
-            placeholder="Add @username"
-            style={{
-              flex: 1,
-              background: "#16181C",
-              border: "1px solid #2F3336",
-              borderRadius: 9999,
-              padding: "8px 16px",
-              fontSize: 13,
-              color: "#E7E9EA",
-              outline: "none",
-            }}
-            onFocus={e => (e.target.style.borderColor = "#1D9BF0")}
-            onBlur={e => (e.target.style.borderColor = "#2F3336")}
-          />
-          <button
-            onClick={onAdd}
-            disabled={addLoading || !addUsername.trim()}
-            style={{
-              background: addLoading || !addUsername.trim() ? "#333" : "#E7E9EA",
-              color: "#000",
-              fontWeight: 700,
-              fontSize: 13,
-              borderRadius: 9999,
-              padding: "8px 16px",
-              cursor: addLoading || !addUsername.trim() ? "not-allowed" : "pointer",
-              flexShrink: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              minWidth: 60,
-              transition: "background 0.15s",
-            }}
-          >
-            {addLoading ? <Spinner dark /> : "Track"}
-          </button>
-        </div>
-        {addError && (
-          <p style={{ color: "#F4212E", fontSize: 12, marginTop: 8 }}>{addError}</p>
-        )}
-      </div>
+  const [now, setNow] = useState<number | null>(null);
 
-      {/* List */}
-      {creators.length === 0 ? (
-        <div className="flex flex-col items-center justify-center text-center" style={{ padding: "48px 24px" }}>
-          <div style={{ width: 48, height: 48, borderRadius: 9999, background: "#16181C", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16, fontSize: 22 }}>
-            👤
-          </div>
-          <p style={{ fontSize: 15, fontWeight: 700, color: "#E7E9EA", marginBottom: 6 }}>No creators yet</p>
-          <p style={{ fontSize: 13, color: "#71767B", lineHeight: 1.5 }}>
-            Track up to 5 creators to get AI insights on what makes them grow.
-          </p>
+  useEffect(() => {
+    const initialTimer = window.setTimeout(() => setNow(Date.now()), 0);
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => {
+      window.clearTimeout(initialTimer);
+      window.clearInterval(timer);
+    };
+  }, []);
+
+  const refreshedAt = discovery ? new Date(discovery.refreshedAt).getTime() : 0;
+  const remainingMs = now === null
+    ? REFRESH_COOLDOWN_MS
+    : Math.max(0, refreshedAt + REFRESH_COOLDOWN_MS - now);
+  const coolingDown = discovery !== null && (now === null || remainingMs > 0);
+
+  if (creators.length === 0) {
+    return (
+      <div className="axe-view axe-fade-in">
+        <section className="axe-intro solo">
+          <div><h1>Your daily reply feed</h1><p>Add creators first, then Axe will find the strongest recent posts across all of them.</p></div>
+        </section>
+        <section className="axe-empty compact">
+          <h2>No creators yet</h2>
+          <p>Build your list before finding posts.</p>
+          <button className="axe-secondary-button" onClick={onOpenCreators}>Add creators</button>
+        </section>
+      </div>
+    );
+  }
+
+  return (
+    <div className="axe-view axe-fade-in">
+      <section className="axe-posts-hero">
+        <div>
+          <h1>Find something worth replying to</h1>
+          <p>Axe checks {creators.length} {creators.length === 1 ? "creator" : "creators"} and ranks the strongest recent opportunities.</p>
         </div>
+        {!coolingDown && (
+          <button className="axe-discover-button" onClick={onRefresh} disabled={refreshing}>
+            {refreshing ? <><MiniSpinner /> Finding posts</> : <><RefreshIcon /> Find posts for me</>}
+          </button>
+        )}
+        {discovery && (
+          <div className="axe-refresh-meta">
+            <span>Last refreshed {formatRefreshDate(discovery.refreshedAt)}</span>
+            {coolingDown && <span>Available again in {formatRemaining(remainingMs)}</span>}
+            {discovery.failedCreators.length > 0 && <span>{discovery.failedCreators.length} failed</span>}
+          </div>
+        )}
+        {error && <p className="axe-card-error">{error}</p>}
+      </section>
+
+      {refreshing ? (
+        <TopicLoading />
+      ) : discovery?.posts.length ? (
+        <section className="axe-combined-feed">
+          <div className="axe-feed-heading">
+            <p>Top opportunities</p>
+            <span>{discovery.posts.length} of {discovery.candidateCount}</span>
+          </div>
+          <div className="axe-topic-list axe-feed-list">
+            {discovery.posts.map((post, index) => {
+              const creator = creators.find(
+                (item) => item.creatorUsername.toLowerCase() === post.creatorUsername.toLowerCase()
+              ) ?? fallbackCreator(post.creatorUsername);
+              return (
+                <InspirationCard
+                  key={`${post.sourcePostId}-${index}`}
+                  topic={post}
+                  creator={creator}
+                  onSelect={() => onSelectIdea(creator, post)}
+                />
+              );
+            })}
+          </div>
+        </section>
+      ) : discovery ? (
+        <section className="axe-empty compact">
+          <h2>No recent reply opportunities</h2>
+          <p>None of your creators posted an eligible opportunity in the last 48 hours.</p>
+        </section>
       ) : (
-        creators.map(c => (
-          <CreatorRow
-            key={c.creatorXId}
-            creator={c}
-            onClick={() => onSelect(c)}
-            onUntrack={() => onUntrack(c.creatorXId)}
-            onPause={() => onPause(c.creatorXId)}
-          />
-        ))
+        <section className="axe-empty compact">
+          <h2>Your feed is ready to build</h2>
+          <p>Run the first analysis to find recent posts across all your creators.</p>
+        </section>
       )}
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Creator Row
-// ─────────────────────────────────────────────────────────────────────────────
-
-function CreatorRow({ creator, onClick, onUntrack, onPause }: {
+function InspirationCard({ topic, creator, onSelect }: {
+  topic: CombinedPost;
   creator: Creator;
-  onClick: () => void;
-  onUntrack: () => void;
-  onPause: () => void;
+  onSelect: () => void;
 }) {
-  const [hovered, setHovered] = useState(false);
+  const isHot = topic.worthReplying === true;
+  const sourceUrl = `https://x.com/${topic.creatorUsername}/status/${topic.sourcePostId}`;
+  const openIdeaAndSource = () => {
+    onSelect();
+    window.open(sourceUrl, "_top");
+  };
 
   return (
     <div
-      onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 12,
-        padding: "12px 16px",
-        borderBottom: "1px solid #2F3336",
-        background: hovered ? "#080808" : "transparent",
-        cursor: "pointer",
-        transition: "background 0.1s",
+      className="axe-topic axe-feed-card"
+      role="button"
+      tabIndex={0}
+      onClick={openIdeaAndSource}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") openIdeaAndSource();
       }}
     >
-      <Avatar src={creator.creatorProfileImage} size={42} />
-
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ fontSize: 14, fontWeight: 700, color: "#E7E9EA", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.3 }}>
-          {creator.creatorDisplayName}
-        </p>
-        <p style={{ fontSize: 12, color: "#71767B", marginTop: 1 }}>
-          @{creator.creatorUsername}
-        </p>
-        {creator.insight?.topics?.length ? (
-          <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
-            {creator.insight.topics.slice(0, 2).map((t, i) => (
-              <span key={i} style={{
-                background: "rgba(29,155,240,0.08)",
-                color: "#1D9BF0",
-                fontSize: 11,
-                padding: "2px 8px",
-                borderRadius: 9999,
-                lineHeight: 1.5,
-              }}>
-                {t}
-              </span>
-            ))}
+      <Avatar src={creator.creatorProfileImage} name={creator.creatorDisplayName} size={42} />
+      <div className="axe-feed-card-body">
+        <div className="axe-topic-heading">
+          <div className="axe-post-author">
+            <strong>{creator.creatorDisplayName}</strong>
+            <span>@{topic.creatorUsername}</span>
           </div>
-        ) : (
-          <p style={{ fontSize: 11, color: "#71767B", marginTop: 4, display: "flex", alignItems: "center", gap: 5 }}>
-            {creator.paused ? (
-              <span style={{ color: "#F7931A" }}>Paused</span>
-            ) : (
-              <>
-                <span style={{
-                  width: 6, height: 6, borderRadius: "50%",
-                  background: "#1D9BF0",
-                  display: "inline-block",
-                  animation: "pulse 1.5s ease-in-out infinite",
-                }} />
-                Analyzing...
-              </>
-            )}
-          </p>
-        )}
-      </div>
-
-      <div style={{ display: "flex", gap: 2, flexShrink: 0 }}>
-        <ActionBtn
-          onClick={e => { e.stopPropagation(); onPause(); }}
-          title={creator.paused ? "Resume" : "Pause"}
-          hoverColor="#1D9BF0"
-          hoverBg="rgba(29,155,240,0.1)"
+          {isHot && <span className="axe-reply-badge hot">Hot</span>}
+        </div>
+        <p className="axe-topic-title">{topic.title}</p>
+        <p className="axe-mini-post">{topic.miniPost}</p>
+        <a
+          className="axe-post-link axe-feed-source"
+          href={sourceUrl}
+          target="_top"
+          onClick={(event) => {
+            event.stopPropagation();
+            onSelect();
+          }}
         >
-          {creator.paused ? "▶" : "⏸"}
-        </ActionBtn>
-        <ActionBtn
-          onClick={e => { e.stopPropagation(); onUntrack(); }}
-          title="Untrack"
-          hoverColor="#F4212E"
-          hoverBg="rgba(244,33,46,0.1)"
-        >
-          ✕
-        </ActionBtn>
+          See post <ExternalLinkIcon />
+        </a>
       </div>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Creator Detail View
-// ─────────────────────────────────────────────────────────────────────────────
-
-function CreatorView({ creator, onBack, onUntrack, onPause }: {
-  creator: Creator;
-  onBack: () => void;
-  onUntrack: () => void;
-  onPause: () => void;
+function CreatorsView({ creators, onCreatorsChange }: {
+  creators: Creator[];
+  onCreatorsChange: (creators: Creator[]) => void;
 }) {
-  const { insight } = creator;
+  const [addUsername, setAddUsername] = useState("");
+  const [addLoading, setAddLoading] = useState(false);
+  const [addError, setAddError] = useState("");
+  const [searchResults, setSearchResults] = useState<CreatorSearchResult[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [pendingRemoval, setPendingRemoval] = useState<string | null>(null);
+
+  useEffect(() => {
+    const query = addUsername.trim().replace("@", "");
+    if (query.length < 2) {
+      setSearchResults([]);
+      setSearchLoading(false);
+      setSearchOpen(false);
+      return;
+    }
+    let current = true;
+    setSearchLoading(true);
+    const timer = window.setTimeout(() => {
+      api.searchCreators(query)
+        .then(({ users }) => {
+          if (!current) return;
+          const tracked = new Set(creators.map((creator) => creator.creatorUsername.toLowerCase()));
+          setSearchResults(users.filter((user) => !tracked.has(user.username.toLowerCase())).slice(0, 5));
+          setSearchOpen(true);
+        })
+        .catch(() => current && setSearchResults([]))
+        .finally(() => current && setSearchLoading(false));
+    }, 350);
+    return () => {
+      current = false;
+      window.clearTimeout(timer);
+    };
+  }, [addUsername, creators]);
+
+  const addCreator = async (selectedUsername?: string) => {
+    const username = (selectedUsername ?? addUsername).trim().replace("@", "");
+    if (!username || addLoading) return;
+    setAddLoading(true);
+    setAddError("");
+    setSearchOpen(false);
+    try {
+      const { creator } = await api.getCreatorProfile(username);
+      if (creators.some((item) => item.creatorUsername.toLowerCase() === creator.creatorUsername.toLowerCase())) {
+        setAddError("You’re already tracking this creator.");
+        return;
+      }
+      onCreatorsChange([...creators, { ...creator, insight: null }]);
+      setAddUsername("");
+    } catch (error) {
+      setAddError(error instanceof Error ? error.message : "Could not add this creator.");
+    } finally {
+      setAddLoading(false);
+    }
+  };
 
   return (
-    <div>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderBottom: "1px solid #2F3336" }}>
-        <ActionBtn onClick={onBack} title="Back" hoverColor="#E7E9EA" hoverBg="#16181C" style={{ marginRight: 2 }}>
-          ←
-        </ActionBtn>
-        <Avatar src={creator.creatorProfileImage} size={36} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontSize: 14, fontWeight: 700, color: "#E7E9EA", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", lineHeight: 1.3 }}>
-            {creator.creatorDisplayName}
-          </p>
-          <p style={{ fontSize: 12, color: "#71767B" }}>
-            @{creator.creatorUsername} · {fmtNum(creator.creatorFollowersCount)} followers
-          </p>
+    <div className="axe-view axe-fade-in">
+      <section className="axe-intro">
+        <div>
+          <h1>Creators</h1>
+          <p>Add the people Axe should watch for reply opportunities.</p>
+          <p className="axe-intro-note">You can always remove creators and add new ones, so don’t be shy. Get going.</p>
         </div>
-        <div style={{ display: "flex", gap: 2, alignItems: "center", flexShrink: 0 }}>
-          {creator.paused && (
-            <span style={{ fontSize: 10, color: "#F7931A", border: "1px solid rgba(247,147,26,0.4)", borderRadius: 9999, padding: "2px 8px", marginRight: 4 }}>
-              Paused
-            </span>
-          )}
-          <ActionBtn onClick={onPause} title={creator.paused ? "Resume" : "Pause"} hoverColor="#1D9BF0" hoverBg="rgba(29,155,240,0.1)">
-            {creator.paused ? "▶" : "⏸"}
-          </ActionBtn>
-          <ActionBtn onClick={onUntrack} title="Untrack" hoverColor="#F4212E" hoverBg="rgba(244,33,46,0.1)">
-            ✕
-          </ActionBtn>
-        </div>
-      </div>
+        <span className="axe-count">{creators.length}</span>
+      </section>
 
-      {!insight ? (
-        <div className="flex flex-col items-center justify-center text-center" style={{ padding: "56px 24px" }}>
-          <div style={{ width: 32, height: 32, borderRadius: "50%", border: "2px solid #2F3336", borderTopColor: "#1D9BF0", marginBottom: 16, animation: "spin 0.8s linear infinite" }} />
-          <p style={{ fontSize: 14, fontWeight: 700, color: "#E7E9EA", marginBottom: 6 }}>Analyzing tweets</p>
-          <p style={{ fontSize: 13, color: "#71767B" }}>Usually takes about 30 seconds.</p>
-        </div>
-      ) : (
-        <>
-          <Section>
-            <p style={{ fontSize: 13, color: "#E7E9EA", lineHeight: 1.6 }}>{insight.summary}</p>
-          </Section>
-
-          <Section label="Topics">
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {insight.topics.map((t, i) => (
-                <span key={i} style={{
-                  background: "#16181C",
-                  border: "1px solid #2F3336",
-                  color: "#E7E9EA",
-                  fontSize: 12,
-                  padding: "4px 12px",
-                  borderRadius: 9999,
-                }}>
-                  {t}
-                </span>
-              ))}
-            </div>
-          </Section>
-
-          <Section label="What works">
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {insight.patterns.map((p, i) => (
-                <div key={i} style={{ display: "flex", gap: 10, fontSize: 13 }}>
-                  <span style={{ color: "#1D9BF0", fontWeight: 700, flexShrink: 0, marginTop: 1 }}>—</span>
-                  <span style={{ color: "#E7E9EA", lineHeight: 1.5 }}>{p}</span>
-                </div>
-              ))}
-            </div>
-          </Section>
-
-          <Section label="Posting cadence">
-            <p style={{ fontSize: 13, color: "#E7E9EA" }}>{insight.postingFrequency}</p>
-          </Section>
-
-          <Section label="Top tweets">
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {insight.topTweets.map(t => (
-                <TweetCard key={t.id} text={t.text} likes={t.likeCount} replies={t.replyCount} date={t.tweetedAt} />
-              ))}
-            </div>
-          </Section>
-        </>
-      )}
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Me View
-// ─────────────────────────────────────────────────────────────────────────────
-
-function MeView({ me, meLoading, myUsername, onUsernameChange }: {
-  me: MeResponse | null;
-  meLoading: boolean;
-  myUsername: string;
-  onUsernameChange: (v: string) => void;
-}) {
-  const [input, setInput] = useState(myUsername);
-
-  if (!myUsername.trim()) {
-    return (
-      <div style={{ padding: "24px 16px" }}>
-        <p style={{ fontSize: 17, fontWeight: 800, color: "#E7E9EA", marginBottom: 6 }}>Your profile</p>
-        <p style={{ fontSize: 13, color: "#71767B", lineHeight: 1.5, marginBottom: 20 }}>
-          Enter your username to see your stats and get personalized reply suggestions.
-        </p>
-        <input
-          type="text"
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && input.trim() && onUsernameChange(input.trim().replace("@", ""))}
-          placeholder="@yourusername"
-          style={{
-            width: "100%",
-            background: "#16181C",
-            border: "1px solid #2F3336",
-            borderRadius: 12,
-            padding: "12px 16px",
-            fontSize: 14,
-            color: "#E7E9EA",
-            outline: "none",
-            marginBottom: 12,
-            boxSizing: "border-box",
-          }}
-          onFocus={e => (e.target.style.borderColor = "#1D9BF0")}
-          onBlur={e => (e.target.style.borderColor = "#2F3336")}
-        />
-        <button
-          onClick={() => input.trim() && onUsernameChange(input.trim().replace("@", ""))}
-          disabled={!input.trim()}
-          style={{
-            background: input.trim() ? "#E7E9EA" : "#333",
-            color: "#000",
-            fontWeight: 700,
-            fontSize: 13,
-            borderRadius: 9999,
-            padding: "10px 20px",
-            cursor: input.trim() ? "pointer" : "not-allowed",
-          }}
-        >
-          Save
-        </button>
-      </div>
-    );
-  }
-
-  if (meLoading || !me) {
-    return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "80px 0" }}>
-        <div style={{ width: 24, height: 24, borderRadius: "50%", border: "2px solid #2F3336", borderTopColor: "#1D9BF0", animation: "spin 0.8s linear infinite" }} />
-      </div>
-    );
-  }
-
-  return (
-    <div>
-      {/* Profile */}
-      <div style={{ padding: "16px", borderBottom: "1px solid #2F3336" }}>
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
-          <Avatar src={me.profileImage} size={52} />
-          <button
-            onClick={() => onUsernameChange("")}
-            style={{
-              fontSize: 12,
-              color: "#71767B",
-              border: "1px solid #2F3336",
-              borderRadius: 9999,
-              padding: "5px 14px",
-              cursor: "pointer",
-              background: "none",
-              transition: "border-color 0.15s",
+      <section className="axe-add-card">
+        <div className="axe-input-wrap">
+          <span className="axe-at">@</span>
+          <input
+            value={addUsername}
+            onChange={(event) => { setAddUsername(event.target.value); setSearchOpen(true); }}
+            onFocus={() => searchResults.length > 0 && setSearchOpen(true)}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") setSearchOpen(false);
+              if (event.key === "Enter") addCreator();
             }}
-            onMouseEnter={e => ((e.target as HTMLElement).style.borderColor = "#71767B")}
-            onMouseLeave={e => ((e.target as HTMLElement).style.borderColor = "#2F3336")}
-          >
-            Change
+            placeholder="Add a creator"
+            aria-label="Creator username"
+            autoComplete="off"
+          />
+          {searchLoading && <span className="axe-search-spinner"><MiniSpinner /></span>}
+          <button onClick={() => addCreator()} disabled={!addUsername.trim() || addLoading}>
+            {addLoading ? <MiniSpinner /> : "Add"}
           </button>
         </div>
-        <p style={{ fontSize: 16, fontWeight: 800, color: "#E7E9EA", lineHeight: 1.3 }}>{me.displayName}</p>
-        <p style={{ fontSize: 13, color: "#71767B", marginTop: 2 }}>@{me.username}</p>
-      </div>
+        {searchOpen && !addLoading && addUsername.trim().length >= 2 && (
+          <div className="axe-search-results">
+            {searchResults.length > 0 ? searchResults.map((user) => (
+              <button key={user.id} className="axe-search-result" onClick={() => addCreator(user.username)}>
+                <Avatar src={user.profileImage} name={user.displayName} size={40} />
+                <span className="axe-search-identity">
+                  <strong>{user.displayName}{user.verified && <VerifiedIcon />}</strong>
+                  <small>@{user.username} · {formatNumber(user.followersCount)} followers</small>
+                </span>
+                <span className="axe-search-add">Add</span>
+              </button>
+            )) : !searchLoading ? (
+              <div className="axe-search-empty">No accounts returned. Press Enter to try the exact username.</div>
+            ) : null}
+          </div>
+        )}
+        {addError && <p className="axe-error">{addError}</p>}
+      </section>
 
-      {/* Stats row */}
-      <div style={{ display: "flex", borderBottom: "1px solid #2F3336" }}>
-        <StatCell label="Followers" value={fmtNum(me.followersCount)} />
-        <StatCell label="Following" value={fmtNum(me.followingCount)} />
-        <StatCell label="Tweets" value={fmtNum(me.tweetCount)} />
-      </div>
-
-      {/* Avg engagement */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: "1px solid #2F3336" }}>
-        <span style={{ fontSize: 13, color: "#71767B" }}>Avg engagement</span>
-        <span style={{ fontSize: 14, fontWeight: 700, color: "#E7E9EA" }}>{me.avgEngagement}</span>
-      </div>
-
-      {/* Recent tweets */}
-      <Section label="Recent tweets">
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {me.recentTweets.map(t => (
-            <TweetCard key={t.id} text={t.text} likes={t.likes} replies={t.replies} retweets={t.retweets} />
+      {creators.length === 0 ? <EmptyCreators /> : (
+        <section className="axe-creator-list">
+          {creators.map((creator, index) => (
+            <article className="axe-creator-card axe-management-card" key={creator.creatorXId} style={{ animationDelay: `${index * 35}ms` }}>
+              <div className="axe-creator-head">
+                <Avatar src={creator.creatorProfileImage} name={creator.creatorDisplayName} size={44} />
+                <div className="axe-creator-identity">
+                  <p>{creator.creatorDisplayName}</p>
+                  <span>@{creator.creatorUsername} · {formatNumber(creator.creatorFollowersCount)} followers</span>
+                </div>
+                {pendingRemoval === creator.creatorXId ? (
+                  <div className="axe-remove-confirm" role="group" aria-label={`Remove ${creator.creatorDisplayName}?`}>
+                    <button className="axe-remove-cancel" onClick={() => setPendingRemoval(null)}>Cancel</button>
+                    <button
+                      className="axe-remove-action"
+                      onClick={() => {
+                        onCreatorsChange(creators.filter((item) => item.creatorXId !== creator.creatorXId));
+                        setPendingRemoval(null);
+                      }}
+                    >Remove</button>
+                  </div>
+                ) : (
+                  <button
+                    className="axe-icon-button"
+                    onClick={() => setPendingRemoval(creator.creatorXId)}
+                    title="Remove creator"
+                    aria-label={`Remove ${creator.creatorDisplayName}`}
+                  >×</button>
+                )}
+              </div>
+            </article>
           ))}
-        </div>
-      </Section>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Shared Components
-// ─────────────────────────────────────────────────────────────────────────────
-
-function ReplyCard({ idea }: { idea: ReplyIdea }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <div style={{
-      background: "rgba(29,155,240,0.06)",
-      border: "1px solid rgba(29,155,240,0.18)",
-      borderRadius: 12,
-      padding: "10px 12px",
-    }}>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, marginBottom: 5 }}>
-        <span style={{ fontSize: 10, fontWeight: 700, color: "#1D9BF0", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-          {idea.angle}
-        </span>
-        <button
-          onClick={() => { navigator.clipboard.writeText(idea.exampleReply); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
-          style={{ fontSize: 11, color: copied ? "#1D9BF0" : "#71767B", cursor: "pointer", background: "none", flexShrink: 0, transition: "color 0.15s" }}
-        >
-          {copied ? "✓ Copied" : "Copy"}
-        </button>
-      </div>
-      <p style={{ fontSize: 12, color: "#E7E9EA", lineHeight: 1.55, marginBottom: 5 }}>
-        "{idea.exampleReply}"
-      </p>
-      <p style={{ fontSize: 11, color: "#71767B", lineHeight: 1.5 }}>{idea.why}</p>
-    </div>
-  );
-}
-
-function TweetCard({ text, likes, replies, retweets, date }: {
-  text: string; likes: number; replies: number; retweets?: number; date?: string;
-}) {
-  return (
-    <div style={{
-      background: "#16181C",
-      border: "1px solid #2F3336",
-      borderRadius: 12,
-      padding: "12px",
-    }}>
-      <p style={{ fontSize: 13, color: "#E7E9EA", lineHeight: 1.55, marginBottom: 10, display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-        {text}
-      </p>
-      <div style={{ display: "flex", gap: 16, fontSize: 12, color: "#71767B", alignItems: "center" }}>
-        <span>♥ {fmtNum(likes)}</span>
-        <span>↩ {fmtNum(replies)}</span>
-        {retweets !== undefined && <span>↺ {fmtNum(retweets)}</span>}
-        {date && <span style={{ marginLeft: "auto" }}>{fmtDate(date)}</span>}
-      </div>
-    </div>
-  );
-}
-
-function Section({ label, children }: { label?: string; children: ReactNode }) {
-  return (
-    <div style={{ padding: "16px", borderBottom: "1px solid #2F3336" }}>
-      {label && (
-        <p style={{ fontSize: 10, fontWeight: 700, color: "#71767B", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>
-          {label}
-        </p>
+        </section>
       )}
-      {children}
     </div>
   );
 }
 
-function StatCell({ label, value }: { label: string; value: string }) {
+function IdeaSlate({ selection }: { selection: IdeaSelection }) {
+  const { creator, topic } = selection;
+  const replyDirections = topic.replyDirections ?? [];
+  const draftKey = `axe_draft_${creator.creatorXId}_${topic.sourcePostId ?? topic.title}`;
+  const [draft, setDraft] = useState(() => localStorage.getItem(draftKey) ?? "");
+  const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
+
+  useEffect(() => localStorage.setItem(draftKey, draft), [draft, draftKey]);
+
+  const copyDraft = async () => {
+    if (!draft.trim()) return;
+    setCopyFailed(false);
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("Clipboard API unavailable");
+      await navigator.clipboard.writeText(draft);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
+    } catch {
+      const fallback = document.createElement("textarea");
+      fallback.value = draft;
+      fallback.style.position = "fixed";
+      fallback.style.opacity = "0";
+      document.body.appendChild(fallback);
+      fallback.focus();
+      fallback.select();
+      const succeeded = document.execCommand("copy");
+      fallback.remove();
+      if (succeeded) {
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 1600);
+      } else setCopyFailed(true);
+    }
+  };
+
   return (
-    <div style={{
-      flex: 1,
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      padding: "12px 8px",
-      borderRight: "1px solid #2F3336",
-    }}
-      className="last:border-r-0"
-    >
-      <span style={{ fontSize: 16, fontWeight: 800, color: "#E7E9EA" }}>{value}</span>
-      <span style={{ fontSize: 11, color: "#71767B", marginTop: 2 }}>{label}</span>
+    <div className="axe-view axe-idea-slate axe-fade-in">
+      <section className="axe-slate-source axe-source-post">
+        <Avatar src={creator.creatorProfileImage} name={creator.creatorDisplayName} size={42} />
+        <div className="axe-source-post-body">
+          <div className="axe-slate-creator">
+            <div><p>{creator.creatorDisplayName}</p><span>@{topic.creatorUsername}</span></div>
+            {topic.worthReplying && <span className="axe-reply-badge hot">Hot</span>}
+          </div>
+          <h1>{topic.title}</h1>
+          <p>{topic.miniPost}</p>
+          <a href={`https://x.com/${topic.creatorUsername}/status/${topic.sourcePostId}`} target="_top">
+            View original <ExternalLinkIcon />
+          </a>
+        </div>
+      </section>
+      {replyDirections.length > 0 && (
+        <section className="axe-directions-box">
+          <div className="axe-slate-label"><DirectionIcon /> Ways you could jump in</div>
+          <div className="axe-direction-list">
+            {replyDirections.map((item, index) => (
+              <div className="axe-direction" key={`${item.direction}-${index}`}>
+                <span className="axe-note-bullet" />
+                <p><strong>{item.direction}</strong><span> something like “{item.examplePost}”</span></p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+      <section className="axe-draft-box">
+        <div className="axe-draft-head"><p>Post your reply</p><span>{draft.length}</span></div>
+        <textarea value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Start writing your take..." autoFocus />
+        <div className="axe-draft-footer">
+          <span>{draft ? "Draft saved" : "Saved automatically"}</span>
+          <button className={copied ? "copied" : ""} onClick={copyDraft} disabled={!draft.trim()}>
+            <CopyIcon /> {copyFailed ? "Copy failed" : copied ? "Copied" : "Copy post"}
+          </button>
+        </div>
+      </section>
     </div>
   );
 }
 
-function Avatar({ src, size }: { src: string | null; size: number }) {
+function TopicLoading() {
   return (
-    <img
-      src={src ?? ""}
-      alt=""
-      style={{ width: size, height: size, borderRadius: "50%", background: "#2F3336", flexShrink: 0, objectFit: "cover", display: "block" }}
-      onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-    />
+    <div className="axe-loading-panel axe-combined-loading">
+      <div className="axe-loading-copy">
+        <MiniSpinner />
+        <div><p>Scroll for 30 seconds, I’m on it.</p><span>Checking all your creators</span></div>
+      </div>
+      {[72, 92, 81].map((width, index) => (
+        <div className="axe-skeleton" key={index}><i /><div><span style={{ width: `${width}%` }} /><span style={{ width: `${Math.max(48, width - 18)}%` }} /></div></div>
+      ))}
+    </div>
   );
 }
 
-function ActionBtn({ onClick, title, hoverColor, hoverBg, children, style: extraStyle }: {
-  onClick: (e: React.MouseEvent) => void;
-  title: string;
-  hoverColor: string;
-  hoverBg: string;
-  children: ReactNode;
-  style?: React.CSSProperties;
-}) {
-  const [hovered, setHovered] = useState(false);
+function EmptyCreators() {
   return (
-    <button
-      onClick={onClick}
-      title={title}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        width: 30,
-        height: 30,
-        borderRadius: "50%",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: 12,
-        color: hovered ? hoverColor : "#71767B",
-        background: hovered ? hoverBg : "transparent",
-        cursor: "pointer",
-        transition: "color 0.15s, background 0.15s",
-        ...extraStyle,
-      }}
-    >
-      {children}
-    </button>
+    <section className="axe-empty">
+      <PeopleIcon />
+      <h2>Add your first creator</h2><p>Add someone you always stop scrolling for.</p>
+    </section>
   );
 }
 
-function Spinner({ dark }: { dark?: boolean }) {
-  return (
-    <div style={{
-      width: 14, height: 14, borderRadius: "50%",
-      border: `2px solid ${dark ? "rgba(0,0,0,0.2)" : "#2F3336"}`,
-      borderTopColor: dark ? "#000" : "#1D9BF0",
-      animation: "spin 0.8s linear infinite",
-      display: "inline-block",
-    }} />
-  );
+function Avatar({ src, name, size }: { src: string | null; name: string; size: number }) {
+  const [failed, setFailed] = useState(false);
+  if (!src || failed) return <div className="axe-avatar fallback" style={{ width: size, height: size }}>{name.charAt(0).toUpperCase()}</div>;
+  return <img className="axe-avatar" src={src} alt="" style={{ width: size, height: size }} onError={() => setFailed(true)} />;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
-function fmtNum(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return n.toString();
+function fallbackCreator(username: string): Creator {
+  return {
+    creatorXId: username,
+    creatorUsername: username,
+    creatorDisplayName: `@${username}`,
+    creatorProfileImage: null,
+    creatorFollowersCount: 0,
+    insight: null,
+  };
 }
 
-function fmtDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const days = Math.floor((now.getTime() - date.getTime()) / 86400000);
-  if (days === 0) return "today";
-  if (days === 1) return "1d";
-  if (days < 30) return `${days}d`;
-  if (days < 365) return `${Math.floor(days / 30)}mo`;
-  return `${Math.floor(days / 365)}y`;
+function MiniSpinner() { return <span className="axe-mini-spinner" />; }
+function RefreshIcon() { return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M16.5 6.5V2.8m0 0h-3.7m3.7 0-2.1 2.1A6.4 6.4 0 1 0 16 12.7" /></svg>; }
+function VerifiedIcon() { return <svg className="axe-verified" viewBox="0 0 22 22" aria-label="Verified"><path d="M20.4 11c0 1.2-1.5 2.1-1.9 3.1-.4 1.1.2 2.7-.6 3.5-.8.8-2.4.2-3.5.6-1 .4-1.9 1.9-3.1 1.9s-2.1-1.5-3.1-1.9c-1.1-.4-2.7.2-3.5-.6-.8-.8-.2-2.4-.6-3.5C3.5 13.1 2 12.2 2 11s1.5-2.1 1.9-3.1c.4-1.1-.2-2.7.6-3.5.8-.8 2.4-.2 3.5-.6C9 3.4 9.9 1.9 11.1 1.9s2.1 1.5 3.1 1.9c1.1.4 2.7.2 3.5.6.8.8.2 2.4.6 3.5.4 1 1.9 1.9 1.9 3.1Z" /><path className="axe-verified-check" d="m7.3 11.2 2.3 2.3 5.2-5.2" /></svg>; }
+function PeopleIcon() { return <svg className="axe-empty-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 20v-1.5a4.5 4.5 0 0 0-4.5-4.5h-4A4.5 4.5 0 0 0 3 18.5V20M9.5 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7-1a3 3 0 0 1 0 6m1.5 5v-1a4 4 0 0 0-2.4-3.7" /></svg>; }
+function ExternalLinkIcon() { return <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5H3.8a1.3 1.3 0 0 0-1.3 1.3v7.4a1.3 1.3 0 0 0 1.3 1.3h7.4a1.3 1.3 0 0 0 1.3-1.3V10M9 2.5h4.5V7M13.2 2.8 7.5 8.5" /></svg>; }
+function BackIcon() { return <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m9.8 3.2-4.7 4.8 4.7 4.8M5.4 8h7.1" /></svg>; }
+function CopyIcon() { return <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="7.5" height="7.5" rx="1.5" /><path d="M10.5 5.5v-1A1.5 1.5 0 0 0 9 3H4.5A1.5 1.5 0 0 0 3 4.5V9A1.5 1.5 0 0 0 4.5 10.5h1" /></svg>; }
+function DirectionIcon() { return <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4.2h7.5M3 8h10M3 11.8h6" /></svg>; }
+
+function formatNumber(value: number) {
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
+  return String(value);
+}
+
+function formatRemaining(milliseconds: number) {
+  const totalMinutes = Math.ceil(milliseconds / 60_000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+}
+
+function formatRefreshDate(value: string) {
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value));
 }

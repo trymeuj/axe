@@ -4,9 +4,14 @@
   "private": true,
   "scripts": {
     "install:all": "npm --prefix backend install && npm --prefix extension install",
+    "install:video": "npm --prefix video install",
     "dev:backend": "npm --prefix backend run dev",
+    "dev:video": "npm --prefix video run dev",
     "build:backend": "npm --prefix backend run build",
-    "build:extension": "npm --prefix extension run build",
-    "build": "npm run build:backend && npm run build:extension"
+    "build:extension": "npm run build:extension:production",
+    "build:extension:local": "npm --prefix extension run build:local",
+    "build:extension:production": "npm --prefix extension run build:production",
+    "build": "npm run build:backend && npm run build:extension",
+    "render:video": "npm --prefix video run render"
   }
 }

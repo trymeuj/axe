@@ -1,192 +1,139 @@
 # Axe Product Direction
 
-Last updated: 2026-08-23
+Last updated: September 1, 2026
 
-This is the living record of how the founder wants Axe to work. Update it whenever a product assumption, constraint, or decision changes.
+This is the living product record for Axe. It should describe the product we are actually building now, while keeping later ideas clearly separated from the alpha.
 
-Current implementation work is tracked separately in [ACTIVE_TODO.md](./ACTIVE_TODO.md).
+## Purpose
 
-## Product purpose
+Axe reduces the activation energy required to participate meaningfully on X.
 
-Axe helps creators begin and frame posts using useful patterns from creators they admire. It is not an automatic post generator.
+It helps a user:
 
-Posting has two problems that Axe should solve:
+1. Find recent posts from creators they follow that are genuinely worth replying to.
+2. See a few useful ways into the conversation.
+3. Write the reply themselves in their own voice.
 
-1. **What should I post about?**
-2. **How should I frame the post?**
+Axe is not an automatic post writer. It should remove the difficult starting work without replacing the user's judgment or writing.
 
-The user writes the final post. Axe provides topics, angles, questions, bullet points, structural guidance, and short phrase fragments. It should not produce a finished, copy-pasteable draft.
+## Current alpha: recent reply opportunities
 
-## Current stage and constraints
+Mode 1 is the complete scope of the current alpha.
 
-- Build for personal use first, followed by approximately 10 early users.
-- Optimize for usefulness and learning, not scale.
-- Manual operations and duplicated creator analysis are acceptable at this stage.
-- Do not build real-time monitoring or keep an LLM continuously running.
-- Do not add complicated infrastructure until early users demonstrate repeated value.
-- The product can evolve later; these principles describe the current MVP.
+The product has two tabs:
 
-## Core modes
+- **Creators:** the user adds and removes the public X accounts they want Axe to monitor. There is no creator limit for the first ten users.
+- **Posts:** the user's daily workspace. Axe analyzes all tracked creators together and returns one ranked feed of reply opportunities.
 
-### Mode 1: Help me find an idea
+The feed is organized by opportunity, not by creator. Each post still shows who published it.
 
-- The user selects approximately 3–5 creators.
-- When the user explicitly requests a refresh, Axe fetches those creators' posts from approximately the previous week.
-- Newer posts receive more weight than older posts.
-- Other useful signals can include engagement, performance relative to the creator's normal results, repeated themes across creators, novelty, and relevance to the user.
-- Axe returns idea cards rather than finished posts.
-- Useful output includes topics, why the topic may be interesting, possible personal angles, questions for the user, and framing directions.
+## Daily workflow
 
-### Mode 2: Help me frame an idea
+1. The user adds public creator accounts in the Creators tab.
+2. The user asks Axe to find posts.
+3. Axe fetches eligible recent posts from every tracked creator.
+4. Axe ranks candidates and evaluates them together.
+5. Axe shows up to 20 combined reply opportunities.
+6. The user opens an Inspiration Card to see the original post and an Idea Slate.
+7. The user uses the rough directions as prompts, writes their own reply, and copies the finished post.
 
-- The user supplies a rough idea, observation, or experience.
-- Axe uses the stored writing-pattern analysis of the selected creators.
-- It suggests several ways to structure the thought.
-- Useful output includes opening mechanisms, point sequences, evidence prompts, tension or contrast, closing directions, and short phrase fragments.
-- The user writes the final post.
+## Candidate selection and ranking
 
-## Creator analysis
+Axe considers only:
 
-### Stable writing-pattern profile
+- Original posts published within the last 48 hours.
+- No replies.
+- No reposts.
 
-- Analyze a creator when the user first adds them.
-- Treat writing style as mostly static during the MVP.
-- No automatic monthly refresh is necessary yet; a manual reanalysis option is sufficient.
-- Analyze a representative sample of original posts, with replies, reposts, and repetitive promotions excluded where possible.
-- Prefer learning from the creator's stronger posts rather than treating every post equally.
-- Store operational patterns, not generic descriptions such as "concise and engaging."
-- Examples of useful patterns include how the creator opens, develops an idea, uses evidence or experience, creates contrast, controls sentence rhythm, and closes.
+For each creator, Axe calculates:
 
-### Selecting top-performing posts
+> Traction = likes + 2 × reposts + 3 × replies
 
-Top posts should be identified using public engagement signals where available:
+It then applies the following recency multiplier:
 
-- Likes
-- Replies
-- Reposts
-- Quotes
-- Bookmarks
-- Impressions/views
+- Under 6 hours: × 1.0
+- 6–24 hours: × 0.6
+- 24–48 hours: × 0.2
+- Older than 48 hours: excluded
 
-Raw engagement alone is misleading because older posts have had more time to accumulate engagement and large creators naturally receive larger counts. Axe should prefer a relative performance score that considers:
+The final internal rank is:
 
-- Engagement compared with that creator's normal post
-- Post age
-- Impressions when available
-- Type of post and whether it is original content
+> Final rank = Traction × recency multiplier
 
-For the MVP, a simple ranking is acceptable. Analyze both a group of top-performing posts and a smaller baseline sample of ordinary posts so the model can identify what is distinctive about the winners.
+Axe selects up to eight candidates per creator, combines those candidates, and evaluates the entire pool in one AI call. Users do not see the numeric scores.
 
-## User personalization
+High engagement on a recent post is the alpha proxy for momentum. Axe does not yet track engagement changes over time, inspect the traction of individual replies, normalize by creator size, or compare a post with the creator's historical average.
 
-There are two possible levels.
+If a creator has no eligible posts, Axe does not substitute stale content. If the combined pool is empty, it shows that there are no recent reply opportunities.
 
-### Level 1: Public-account personalization
+## AI evaluation
 
-Axe can treat the user like any other public creator and retrieve their public profile, posts, and public engagement metrics. This does not require the user to authorize their X account.
+The combined candidate pool is sent in one call to GPT-5.6 Terra with low reasoning effort, balancing recommendation quality with acceptable refresh latency.
 
-This is sufficient for the first MVP and can help Axe learn:
+For every returned post, Axe may provide up to three concise thinking directions. There is no minimum: it should return no directions when none meet a high standard. These should feel like rough creator notes, not polished AI copy or finished replies.
 
-- Topics the user already discusses
-- Their existing writing patterns
-- Which public posts performed relatively well
-- Topics and formats they may be overusing
-- Which creator-inspired suggestions are most relevant to their history
+Good directions treat a reply as a public mini-post for everyone reading the thread, not a private exchange with the creator. They help the user:
 
-### Level 2: Connected-account personalization
+- Add a sharp observation, useful extension, or concrete example.
+- Draw an analogy, contrast, or genuine counterpoint.
+- Find a naturally witty framing when the post supports one.
+- Occasionally ask a question that ordinary readers are likely to answer.
 
-The user signs in with X through OAuth and explicitly authorizes Axe. This can identify the account reliably and unlock private metrics for the user's own recent posts, subject to X API permissions and limits.
+Up to four genuinely strong opportunities receive a prominent **Hot** tag. Hot is earned rather than quota-filled, so Axe may mark fewer or none when the candidates do not meet the standard.
 
-Potential additional signals include:
+A direction should remain interesting even if the creator never responds and should give the wider audience something to like, relate to, disagree with, answer, or build upon. Axe should reject generic praise, restatements, forced disagreement, invented experiences, creator-only clarification requests, questions already answered by the post, engagement bait, and copy-paste-ready replies.
 
-- Link clicks
-- Profile clicks
-- Total/private engagement metrics
-- Organic versus promoted performance
-- Access to authorized resources such as bookmarks or home timeline only if the corresponding scopes are deliberately requested
+## Source integrity
 
-Connected access should use the minimum read-only scopes needed. Axe should not request permission to publish during the MVP.
+Every AI result must map back to the exact source post using its source post ID.
 
-**Confirmed MVP decision:** use public-account personalization only. Do not add X OAuth yet. Reconsider OAuth only after the ten-user test shows that private metrics or authenticated resources would materially improve recommendations.
+Unknown, duplicate, or missing IDs invalidate the entire refresh. Axe must never silently pair AI output with a different post based on list position. Accuracy is more important than returning partial results.
 
-## Inspiration creator data
+## Interaction behavior
 
-For each selected inspiration creator, Axe should fetch only public information needed to learn topics and useful writing patterns.
+- Clicking an Inspiration Card opens its original X post and keeps that card's Idea Slate active.
+- Returning to the X feed should not reset Axe to the creator list or lose the user's place.
+- The Idea Slate contains the original context, rough thinking directions, a writing area, and a **Copy post** action.
+- Opening the original post must not force the user to rediscover the card.
 
-### Public creator profile
+## Refresh and storage behavior
 
-- Stable X user ID and username
-- Display name and biography
-- Follower and following counts
-- Total post count
-- Account creation date
-- Profile image for identification in the interface
+- A successful discovery result is cached locally for eight hours.
+- The UI shows when the last analysis was completed and when the next refresh is available.
+- Repeated refreshes are blocked during the eight-hour window.
+- Incompatible or corrupted older cached results are discarded rather than displayed.
 
-### Public original posts
+The alpha does not require user accounts or X OAuth. The tracked creators and discovery state can remain local to the extension for the first ten users.
 
-- Post ID and full text
-- Creation time
-- Public likes, replies, reposts, quotes, bookmarks, and impressions/views when available
-- Whether the post is a reply, repost, quote, thread component, or standalone original
-- Conversation/thread ID and referenced post IDs when available
-- Links, hashtags, mentions, and attached media type when useful
+## Product principles
 
-### Derived by Axe
+- **Participation, not automation:** the user writes the final reply.
+- **Opportunity over volume:** show fewer useful posts rather than fill the feed with stale or weak ones.
+- **Exact source fidelity:** every recommendation must belong to the post it opens.
+- **Natural language:** directions should sound direct and human, not formal, polished, or AI-ish.
+- **On demand:** expensive fetching and AI work happen only when the user requests a refresh.
+- **Simple for ten users:** validate usefulness before building for scale.
 
-- Top-performing posts relative to the creator's normal performance
-- Baseline/ordinary posts for comparison
-- Recurring and recent topics
-- Common opening mechanisms
-- Common post structures
-- Use of stories, examples, evidence, contrast, lists, questions, and conclusions
-- Typical post length and sentence rhythm
-- Posting frequency and timing
-- Patterns that occur disproportionately in strong posts
+## Alpha success criteria
 
-### Exclude or reduce weight
+The current product is working if users can consistently:
 
-- Reposts of other accounts
-- Routine replies unless reply-writing is deliberately studied later
-- Repetitive promotions and announcements
-- Giveaways and obvious engagement bait
-- Duplicated or near-duplicated posts
-- Posts whose performance is dominated by unrelated virality
+- Find recent conversations they would otherwise have missed.
+- Understand quickly why and how they could contribute.
+- Move from discovery to writing without losing context.
+- Produce replies that still feel like their own thinking and voice.
 
-For the MVP, fetch approximately 50–100 representative original posts when a creator is added for writing-pattern analysis. For current-topic inspiration, fetch only posts from roughly the previous seven days when the user explicitly refreshes.
+## Later, after Mode 1 is validated
 
-## AI behavior rules
+These ideas remain valid possibilities but are not part of the current implementation:
 
-- Never default to producing a final post.
-- Prefer bounded, structured outputs instead of unrestricted prose.
-- Require the user's experience, opinion, evidence, or example to complete the post.
-- Explain the underlying structural pattern rather than impersonating a named creator.
-- Avoid vague advice and generic labels.
-- Do not encourage copying a creator's wording or identity.
-- The desired outcome is: "I know what I want to say and how to start," not "I can paste this generated tweet."
+- **Mode 2: frame a thought.** The user brings a rough idea and Axe suggests hooks, structures, phrases, examples, and framing options without writing the final post.
+- One-time creator writing-pattern analysis.
+- Public-account personalization based on the user's own posting history.
+- Creator-relative performance baselines and follower normalization.
+- Engagement momentum measured across multiple snapshots.
+- Analysis of the traction received by individual replies.
+- Server-side user accounts, cross-device state, billing, and persistent database storage.
+- X OAuth or private-account access.
 
-## MVP architecture
-
-- Brave/Chrome extension as the main interface inside X.
-- Next.js backend for API requests and AI orchestration.
-- Neon PostgreSQL provisioned through Vercel for users, creators, creator analyses, refresh results, ideas, and feedback.
-- On-demand X data fetching.
-- On-demand LLM calls.
-- Cached results until the user requests another refresh.
-- No background workers, real-time stream, embeddings, vector database, fine-tuning, or automatic publishing for now.
-
-## Early success criteria
-
-- Does Axe reduce time spent facing an empty composer?
-- Does it help users post more frequently?
-- Are the ideas specific and personally relevant?
-- Does framing guidance lead to a post while preserving the user's voice?
-- Do users return and use the product again?
-- Which idea cards and framing suggestions actually become posts?
-
-## Open questions
-
-- What exact scoring formula produces the best set of top-performing creator posts?
-- How many historical posts are sufficient for a reliable writing-pattern profile?
-- Should users choose which tracked creators influence each framing request?
-- How much information about the user's niche and goals should be entered explicitly versus inferred from public posts?
-- At what point does connecting the user's X account provide enough additional value to justify OAuth complexity?
+These should be reconsidered only after the first ten users demonstrate that the current reply-opportunity workflow is useful.

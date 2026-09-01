@@ -56,7 +56,22 @@ export type XTweet = {
   bookmarkCount: number;
   createdAt: string;
   isReply: boolean;
+  retweeted_tweet?: unknown;
   url: string;
+};
+
+export type XUserSearchResult = XUserInfo & {
+  isBlueVerified?: boolean;
+  verifiedType?: string;
+};
+
+type XUserSearchRaw = Partial<XUserSearchResult> & {
+  screen_name?: string;
+  profile_image_url_https?: string;
+  followers_count?: number;
+  following_count?: number;
+  statuses_count?: number;
+  created_at?: string;
 };
 
 // ---- User info ----
@@ -65,6 +80,33 @@ export async function fetchUserByUsername(username: string): Promise<XUserInfo |
   const data = await get<{ data: XUserInfo; status: string }>(`/twitter/user/info?userName=${username}`);
   if (data.status !== "success" || !data.data) return null;
   return data.data;
+}
+
+// ---- User search ----
+
+export async function searchUsers(query: string): Promise<XUserSearchResult[]> {
+  const data = await get<{
+    users?: XUserSearchRaw[];
+    status?: string;
+  }>(`/twitter/user/search?query=${encodeURIComponent(query)}`);
+
+  if (!Array.isArray(data.users)) return [];
+  return data.users
+    .map((user) => ({
+      id: user.id ?? "",
+      userName: user.userName ?? user.screen_name ?? "",
+      name: user.name ?? user.screen_name ?? "",
+      profilePicture: user.profilePicture ?? user.profile_image_url_https ?? "",
+      followers: user.followers ?? user.followers_count ?? 0,
+      following: user.following ?? user.following_count ?? 0,
+      statusesCount: user.statusesCount ?? user.statuses_count ?? 0,
+      description: user.description ?? "",
+      createdAt: user.createdAt ?? user.created_at ?? "",
+      isBlueVerified: user.isBlueVerified,
+      verifiedType: user.verifiedType,
+    }))
+    .filter((user) => user.id && user.userName)
+    .slice(0, 8);
 }
 
 // ---- User tweets: use tweet_timeline (userId) — recommended by twitterapi.io ----

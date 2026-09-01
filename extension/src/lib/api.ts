@@ -47,7 +47,45 @@ export type Creator = {
   creatorProfileImage: string | null;
   creatorFollowersCount: number;
   insight: CreatorInsight | null;
+  recentTopics?: RecentTopics;
   paused?: boolean;
+};
+
+export type RecentTopics = {
+  topics: Array<{
+    title: string;
+    miniPost: string;
+    sourcePostId?: string;
+    worthReplying?: boolean;
+    replyDirections?: Array<{
+      direction: string;
+      examplePost: string;
+    }>;
+  }>;
+  postCount: number;
+  from: string;
+  to: string;
+};
+
+export type CombinedPost = RecentTopics["topics"][number] & {
+  creatorUsername: string;
+};
+
+export type CombinedDiscovery = {
+  posts: CombinedPost[];
+  candidateCount: number;
+  creatorCount: number;
+  failedCreators: string[];
+  refreshedAt: string;
+};
+
+export type CreatorSearchResult = {
+  id: string;
+  username: string;
+  displayName: string;
+  profileImage: string | null;
+  followersCount: number;
+  verified: boolean;
 };
 
 export type CreatorInsight = {
@@ -75,6 +113,17 @@ export type ReplyIdea = {
 
 // Auth-less (v0) API — used by extension
 export const api = {
+  discoverPosts: (usernames: string[]) =>
+    apiFetch<CombinedDiscovery>("/api/v0/posts/discover", {
+      method: "POST",
+      body: JSON.stringify({ usernames }),
+    }),
+
+  searchCreators: (query: string) =>
+    apiFetch<{ users: CreatorSearchResult[] }>(
+      `/api/v0/creator/search?q=${encodeURIComponent(query.replace("@", ""))}`
+    ),
+
   getUserStats: (username: string) =>
     apiFetch<MeResponse>(`/api/v0/user/stats?username=${encodeURIComponent(username.replace("@", ""))}`),
 
@@ -86,6 +135,11 @@ export const api = {
   getCreatorInsights: (username: string) =>
     apiFetch<{ creator: Omit<Creator, "insight" | "userId">; insight: CreatorInsight | null }>(
       `/api/v0/creator/insights?username=${encodeURIComponent(username.replace("@", ""))}`
+    ),
+
+  getRecentTopics: (username: string) =>
+    apiFetch<RecentTopics & { username: string }>(
+      `/api/v0/creator/topics?username=${encodeURIComponent(username.replace("@", ""))}`
     ),
 
   getReplyIdeas: (

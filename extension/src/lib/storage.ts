@@ -1,7 +1,8 @@
-import type { Creator } from "./api";
+import type { CombinedDiscovery, Creator } from "./api";
 
 const KEY_MY_USERNAME = "axe_my_username";
 const KEY_TRACKED_CREATORS = "axe_tracked_creators";
+const KEY_DISCOVERY = "axe_combined_discovery_v2";
 
 export function getMyUsername(): string {
   try {
@@ -27,5 +28,18 @@ export function getTrackedCreators(): Creator[] {
 }
 
 export function setTrackedCreators(creators: Creator[]): void {
-  localStorage.setItem(KEY_TRACKED_CREATORS, JSON.stringify(creators.slice(0, 5)));
+  localStorage.setItem(KEY_TRACKED_CREATORS, JSON.stringify(creators));
+}
+
+export function getCombinedDiscovery(): CombinedDiscovery | null {
+  try {
+    const raw = localStorage.getItem(KEY_DISCOVERY);
+    return raw ? JSON.parse(raw) as CombinedDiscovery : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setCombinedDiscovery(discovery: CombinedDiscovery): void {
+  localStorage.setItem(KEY_DISCOVERY, JSON.stringify(discovery));
 }

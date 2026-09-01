@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "Axe",
   "version": "0.1.0",
-  "description": "Track top creators. Know what to post next.",
-  "permissions": ["storage", "tabs"],
+  "description": "Find timely X posts worth replying to and shape replies in your own voice.",
+  "permissions": ["clipboardWrite"],
   "host_permissions": ["https://x.com/*", "https://twitter.com/*"],
   "content_scripts": [
     {

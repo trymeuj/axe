@@ -1,6 +1,6 @@
 # Axe
 
-Axe helps creators decide what to post and how to frame it using useful patterns from creators they admire. The user writes the final post; Axe supplies topics, angles, questions, and structural guidance.
+Axe helps creators find recent X posts that are genuinely worth replying to. It ranks reply opportunities across selected creators, suggests a few useful ways into each conversation, and leaves the final writing to the user.
 
 ## Repository structure
 
@@ -10,7 +10,7 @@ axe/
 └── extension/   Brave/Chrome extension used inside X
 ```
 
-The browser extension is the product users install. The backend runs invisibly on Vercel, keeps paid API credentials private, fetches public X information, calls the LLM, and persists results in Neon PostgreSQL.
+The browser extension is the product users install. The backend runs invisibly on Vercel, keeps paid API credentials private, fetches public X information, and evaluates reply opportunities with an LLM. Current creator lists, results, Idea Slate state, and drafts remain local to the extension.
 
 ## Product documentation
 
@@ -56,10 +56,30 @@ npm run dev:backend
 In another terminal:
 
 ```bash
-npm run build:extension
+npm run build:extension:local
 ```
 
 Load `extension/dist` as an unpacked extension from `brave://extensions` or `chrome://extensions`.
+
+After extension source changes, rebuild and reload Axe from the browser's extensions page. Backend source changes hot-reload while `npm run dev:backend` is running.
+
+## Extension environments
+
+Build the extension against the local backend:
+
+```bash
+npm run build:extension:local
+```
+
+This uses `http://localhost:3000`.
+
+Build the extension against the deployed backend:
+
+```bash
+npm run build:extension:production
+```
+
+This uses `https://axe-psi.vercel.app`.
 
 ## Build everything
 
@@ -74,7 +94,7 @@ npm run build
 3. Add `TWITTERAPI_IO_KEY` and `OPENAI_API_KEY` in Vercel environment variables.
 4. Provision Neon PostgreSQL through the Vercel Marketplace and connect it to the backend project.
 5. Deploy the project.
-6. Set `VITE_API_BASE` in `extension/.env` to the deployed Vercel URL.
-7. Rebuild the extension before distributing it.
+6. Confirm `extension/.env.production` points to the deployed Vercel URL.
+7. Run `npm run build:extension:production` before packaging or distributing the extension.
 
 The extension must never contain OpenAI, TwitterAPI.io, or database credentials.

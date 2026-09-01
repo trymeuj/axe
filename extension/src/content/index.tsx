@@ -1,6 +1,6 @@
 // Content script: injects the Axe sidebar into x.com
 
-const SIDEBAR_WIDTH = 320;
+const SIDEBAR_WIDTH = 500;
 const SIDEBAR_ID = "axe-sidebar-container";
 
 function injectSidebar() {
@@ -16,11 +16,12 @@ function injectSidebar() {
     width: `${SIDEBAR_WIDTH}px`,
     height: "100vh",
     zIndex: "9999",
-    borderLeft: "1px solid #2f3336",
-    background: "#000",
+    borderLeft: "1px solid rgba(130, 152, 190, 0.18)",
+    background: "#07090f",
     display: "flex",
     flexDirection: "column",
-    transition: "transform 0.2s ease",
+    boxShadow: "-18px 0 60px rgba(0, 0, 0, 0.32)",
+    transition: "transform 0.32s cubic-bezier(0.22, 1, 0.36, 1)",
   });
 
   // Create iframe pointing to sidebar React app
@@ -43,15 +44,16 @@ function injectSidebar() {
     right: `${SIDEBAR_WIDTH}px`,
     transform: "translateY(-50%) translateX(50%) rotate(-90deg)",
     transformOrigin: "center center",
-    background: "#000",
-    border: "1px solid #2f3336",
+    background: "linear-gradient(135deg, #2589ff, #7257ff)",
+    border: "1px solid rgba(255, 255, 255, 0.18)",
     color: "#fff",
-    padding: "6px 14px",
-    borderRadius: "6px 6px 0 0",
+    padding: "7px 16px",
+    borderRadius: "9px 9px 0 0",
     cursor: "pointer",
     zIndex: "10000",
     fontSize: "12px",
-    transition: "right 0.2s ease",
+    boxShadow: "0 -4px 18px rgba(37, 137, 255, 0.28)",
+    transition: "right 0.32s cubic-bezier(0.22, 1, 0.36, 1), filter 0.2s ease",
     fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   });
 

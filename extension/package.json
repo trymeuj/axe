@@ -1,11 +1,13 @@
 {
   "name": "extension",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && node scripts/post-build.js",
+    "build": "npm run build:production",
+    "build:local": "tsc -b && vite build --mode development && node scripts/post-build.js",
+    "build:production": "tsc -b && vite build --mode production && node scripts/post-build.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },
