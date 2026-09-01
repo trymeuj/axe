@@ -56,8 +56,6 @@ This checklist reflects Axe as it exists now and the work required to put it in 
 - [x] Rework the landing page into an X-native timeline using a sourced creator post and familiar interaction motion
 - [x] Select unlisted Chrome Web Store distribution for the alpha
 - [x] Create local Privacy, Terms, and Support pages and connect them from the landing-page footer
-- [ ] Review the current API routes and protect paid TwitterAPI.io/OpenAI endpoints from unrestricted public use
-- [ ] Add a simple per-user or per-install usage allowance suitable for the first ten users
 - [ ] Finish Chrome Web Store developer registration and payment
 - [x] Publish privacy, terms, and support pages on the Axe domain
 - [ ] Prepare the Chrome Web Store icon, screenshots, descriptions, privacy disclosures, and permission explanations
@@ -80,6 +78,10 @@ This checklist reflects Axe as it exists now and the work required to put it in 
 - [ ] Expand access gradually to ten users
 - [ ] Measure whether users return, open Inspiration Cards, write drafts, and copy posts
 - [ ] Decide after the alpha whether Axe is useful and sellable enough to continue
+
+## Before access expands beyond private testing
+
+- [ ] Protect the paid TwitterAPI.io and OpenAI endpoints with a server-enforced usage allowance. Owner: Ujjwal. Intentionally deferred during private testing.
 
 ## Later, after the alpha proves value
 
