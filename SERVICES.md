@@ -1,14 +1,14 @@
 # Axe Services
 
-Last live check: 2026-09-01
+Last live check: 2026-09-02
 
 ## Required for the current MVP
 
 | Service | Purpose | Current implementation | Live status |
 |---|---|---|---|
 | TwitterAPI.io | Fetch public X profiles, timelines, posts, and public engagement data | Used by the active `/api/v0` routes | Active; profile and timeline requests succeeded |
-| OpenAI API | Evaluate ranked posts, select Hot opportunities, and generate reply directions | The combined discovery call uses `gpt-5.6-terra` with low reasoning effort | Active locally; production discovery will be rechecked after deployment |
-| Next.js backend | Protect keys and coordinate X-data and LLM requests | Local backend in `backend/`; production alias is `https://axe-psi.vercel.app` | Local build succeeds; production currently runs the previous Git commit and awaits the V1 deployment |
+| OpenAI API | Evaluate ranked posts, select Hot opportunities, and generate reply directions | The combined discovery call uses `gpt-5.6-terra` with low reasoning effort | Active; the complete production discovery flow succeeded |
+| Next.js backend | Protect keys and coordinate X-data and LLM requests | Local backend in `backend/`; production alias is `https://axe-psi.vercel.app` | V1 is deployed; landing page, API routes, CORS, legal pages, and full discovery flow are healthy |
 | Browser extension | Axe interface inside X | React/Vite extension in `extension/` | Build succeeds |
 | Neon PostgreSQL through Vercel Marketplace | Persist users, analyses, refreshes, ideas, and feedback | Connected to Production, Preview, and Development; active `/api/v0` flow still uses local storage | Active; database connection verified and Axe schema applied |
 

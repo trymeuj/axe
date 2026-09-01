@@ -59,13 +59,13 @@ This checklist reflects Axe as it exists now and the work required to put it in 
 - [ ] Review the current API routes and protect paid TwitterAPI.io/OpenAI endpoints from unrestricted public use
 - [ ] Add a simple per-user or per-install usage allowance suitable for the first ten users
 - [ ] Finish Chrome Web Store developer registration and payment
-- [ ] Publish privacy, terms, and support pages on the Axe domain
+- [x] Publish privacy, terms, and support pages on the Axe domain
 - [ ] Prepare the Chrome Web Store icon, screenshots, descriptions, privacy disclosures, and permission explanations
 - [ ] Submit the extension as an unlisted Chrome Web Store listing and address any review feedback
-- [ ] Push the complete current local work to GitHub
-- [ ] Deploy the latest backend to Vercel
-- [ ] Verify TwitterAPI.io, OpenAI, and the ranked-post endpoint against the production deployment
-- [ ] Build the extension in production mode so it points to the Vercel backend instead of `localhost:3000`
+- [x] Push the complete current local work to GitHub
+- [x] Deploy the latest backend to Vercel
+- [x] Verify TwitterAPI.io, OpenAI, and the ranked-post endpoint against the production deployment
+- [x] Build the extension in production mode so it points to the Vercel backend instead of `localhost:3000`
 - [ ] Test installation and the complete workflow from a clean Brave profile
 - [ ] Test creator search, refresh, source navigation, restored Idea Slate, draft persistence, and Copy post in production
 - [ ] Write a short installation and first-use guide
