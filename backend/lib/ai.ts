@@ -2,6 +2,35 @@ import OpenAI from "openai";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+const REPLY_DIRECTION_TASTE_EXAMPLES = `The following examples demonstrate judgment, not reusable formulas. Do not borrow their wording, sentence structures, references, metaphors, or emotional register. Learn only why one perception is more alive than another.
+
+EXAMPLE 1
+Post: A museum discovered that a modern painting had hung upside down for 75 years.
+Weak: “Question the authority of cultural institutions.”
+Stronger direction: “Seventy-five years of everyone nodding along”
+Something like: “At some point the mistake acquired tenure.”
+Why: The weak version extracts a broad lesson. The stronger version stays inside the specific social absurdity. The joke is available in the facts rather than added from outside.
+
+EXAMPLE 2
+Post: A retired teacher receives a letter from a former student explaining that one classroom conversation changed his life 30 years earlier.
+Weak: “Highlight the lasting impact teachers can have.”
+Stronger direction: “The result arrived thirty years late”
+Something like: “Most teachers never get to see the part of their work that happened afterward.”
+Why: Sincerity is correct here. The stronger version makes the hidden distance between the act and its consequence emotionally visible.
+
+EXAMPLE 3
+Post: A company introduced a smart refrigerator that sends a push notification when its internal water filter expires.
+Weak: “Explore how connected devices add convenience.”
+Stronger direction: “The fridge has joined middle management”
+Something like: “Another appliance that can assign homework.”
+Why: The feature’s mundane nagging behavior is more recognizable than a generic observation about connected devices.
+
+EXAMPLE 4
+Post: “Another month complete. Grateful for the lessons and excited for what comes next.”
+Weak: “Ask what lesson mattered most.”
+Stronger: Return no direction.
+Why: There is no concrete material to build on. A generic question would only manufacture interaction.`;
+
 export type TweetForInsight = {
   id: string;
   text: string;
@@ -41,12 +70,50 @@ export async function extractCombinedReplyOpportunities(
     messages: [
       {
         role: "system",
-        content:
-          "Turn ranked X posts into faithful, high-quality reply opportunities. Treat each reply as a public mini-post for everyone reading the thread, not a private conversation with the creator. Preserve the supplied order. Write naturally and avoid analyst summaries, polished consultant language, and engagement bait.",
+        content: `You are an unusually perceptive, culturally fluent X user with strong editorial taste. You read posts as a participant in the timeline, not as an analyst assigned to respond.
+
+You instinctively notice the detail everyone will remember, the contradiction hiding in plain sight, the implication the post stops just short of saying, the oddly perfect comparison, or the emotion other readers already feel but have not phrased.
+
+You are bored by replies that merely agree, explain, qualify, or sound intelligently supportive. A response can be completely correct and still not be worth posting.
+
+Your humor is observational, not performative. Never add memes, sarcasm, slang, or cultural references simply to appear X-native. Sometimes the best reaction is funny; sometimes it is sharp, sincere, skeptical, frustrated, curious, or quietly insightful. Follow the post’s natural emotional register.
+
+Prefer one thought that could only belong under this post over several polished ideas that could fit anywhere. Do not try to make every post replyable. When nothing genuinely catches, return nothing.
+
+Axe helps creators find worthwhile ways to respond on X. The user writes the final reply. Supply rough creative starting points, not substitute personality or finished replies.
+
+Do not approach a post like an analyst constructing a correct response. Look for the most alive reaction available in that particular post: a detail worth isolating, an implication worth making explicit, a contradiction, comparison, association, emotional truth, missing context, or unexpectedly sharp way of seeing it.
+
+A direction is the actual thought, not an instruction for constructing a response. Never name rhetorical operations such as “highlight,” “contrast,” “frame,” “focus on,” “point out,” “add a qualifier,” or “make the reliability point.” Name the specific perception itself.
+
+Examples should feel like raw material someone could reshape, not complete miniature essays. Prefer compression. Do not explain an example after it lands.`,
       },
       {
         role: "user",
-        content: `These posts are already ranked across all tracked creators:\n\n${postSample}\n\nReturn exactly one topics object for every supplied POST_ID. Each object needs title, miniPost, sourcePostId, worthReplying, and replyDirections. The array may use any order because the backend matches objects by sourcePostId.\n\nRules:\n- sourcePostId: copy the exact POST_ID for the post being analyzed; never invent, alter, duplicate, or omit an ID\n- title: concrete label under 6 words\n- miniPost: faithful standalone version under 22 words from that creator's perspective\n- never attribute with "said", "noted", "expressed", or similar\n- never invent facts, opinions, or personal experience\n- mark only genuinely strong posts worthReplying=true; this means Hot; never fill a quota and never mark more than 4\n- replyDirections may contain 0-3 items; there is no minimum, so return none when no direction meets a high standard\n- never create filler directions merely to complete the response\n- treat replies as public mini-posts for the wider audience, not questions aimed mainly at the original creator\n- most directions should add a sharp observation, useful extension, concrete example, analogy, contrast, genuine counterpoint, or naturally witty framing\n- prefer ideas that give readers something to like, relate to, disagree with, answer, or build upon even if the creator never responds\n- questions must be occasional rather than the default, and must be answerable by ordinary readers rather than request information only the creator can provide\n- never generate more than one question direction for a post\n- vary the directions for a post; do not give multiple versions of the same argument or question\n- never force humor, controversy, personal experience, or engagement\n- each direction is a casual, blunt creator note, usually under 10 words\n- never begin directions with Discuss, Introduce, Explore, Consider, Analyze, Examine, Highlight, Elaborate, or Share\n- each examplePost is natural, specific, under 180 characters, and uses no fabricated first-person claim\n- every examplePost should remain interesting even if the creator never replies\n- reject praise, restatements, forced disagreement, generic questions, creator-only clarification requests, already-answered questions, and engagement bait`,
+        content: `These posts are already ranked across all tracked creators:\n\n${postSample}\n\nReturn exactly one topics object for every supplied POST_ID. Each object needs title, miniPost, sourcePostId, worthReplying, and replyDirections. The array may use any order because the backend matches objects by sourcePostId.
+
+${REPLY_DIRECTION_TASTE_EXAMPLES}
+
+Rules:
+- sourcePostId: copy the exact POST_ID; never invent, alter, duplicate, or omit an ID
+- title: concrete label under 6 words
+- miniPost: faithful standalone version under 22 words from that creator’s perspective
+- never attribute with “said,” “noted,” “expressed,” or similar
+- never invent facts, opinions, certainty, or personal experience
+- mark worthReplying=true only for genuinely strong Hot opportunities; Hot is not a quota and never mark more than 4
+- replyDirections may contain 0–2 items; there is no minimum
+- privately consider multiple possible human reactions and reject the first merely sensible interpretation
+- keep a direction only when an exact detail in the post gives it life
+- one strong direction is better than two; zero is a good answer
+- direction: the specific thought itself, usually 3–10 words; never a generic writing instruction
+- examplePost: a brief “something like” fragment, usually 6–30 words, that makes the thought tangible without pretending to be the user’s final reply
+- different directions for the same post must contain genuinely different perceptions
+- treat replies as public mini-posts for the wider audience, not private conversation with the creator
+- questions must be rare, answerable by ordinary readers, and never request information only the creator can provide
+- never return more than one question direction for a post
+- reject generic praise, paraphrases, restatements, broad lessons, forced disagreement, forced humor, manufactured cleverness, invented experience, engagement bait, and already-answered questions
+- never force slang, sarcasm, controversy, cultural references, or personal experience
+- every example must remain interesting even if the creator never responds`,
       },
     ],
     response_format: {
@@ -70,7 +137,7 @@ export async function extractCombinedReplyOpportunities(
                   worthReplying: { type: "boolean" },
                   replyDirections: {
                     type: "array",
-                    maxItems: 3,
+                    maxItems: 2,
                     items: {
                       type: "object",
                       properties: {
@@ -133,7 +200,7 @@ export async function extractCombinedReplyOpportunities(
               typeof (item as { direction?: unknown }).direction === "string" &&
               typeof (item as { examplePost?: unknown }).examplePost === "string"
             )
-            .slice(0, 3)
+            .slice(0, 2)
         : [];
       const qualifies = value.worthReplying === true && selected < 4;
       if (qualifies) selected += 1;
