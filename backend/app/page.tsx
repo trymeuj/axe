@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
+import { CHROME_WEB_STORE_URL } from "@/lib/links";
 import ScrollCue from "./components/ScrollCue";
 
 const JUSTIN_POST_URL =
@@ -80,6 +81,14 @@ function MoreIcon() {
   );
 }
 
+function StoreArrowIcon() {
+  return (
+    <svg viewBox="0 0 20 20" aria-hidden="true">
+      <path d="M5.5 14.5 14.5 5.5M8 5.5h6.5V12" />
+    </svg>
+  );
+}
+
 function PostActions({ animated = false }: { animated?: boolean }) {
   return (
     <div className={`post-actions${animated ? " post-actions--animated" : ""}`}>
@@ -137,8 +146,13 @@ export default function Home() {
             <a href="#how-it-works">How it works</a>
             <Link href="/privacy">Privacy</Link>
           </nav>
-          <a className="x-header__cta" href="#how-it-works">
-            See how Axe works
+          <a
+            className="x-header__cta"
+            href={CHROME_WEB_STORE_URL}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Add to Chrome
           </a>
         </div>
       </header>
@@ -222,6 +236,18 @@ export default function Home() {
                 <div className="axe-statement">
                   <p>Showing up consistently is the hard part.</p>
                   <h1>Axe guarantees that.</h1>
+                  <a
+                    className="hero-install"
+                    href={CHROME_WEB_STORE_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <span>
+                      Add Axe to Chrome
+                      <small>Free on the Chrome Web Store</small>
+                    </span>
+                    <StoreArrowIcon />
+                  </a>
                 </div>
                 <div className="post-actions post-actions--axe" aria-hidden="true">
                   <span className="post-action"><span className="post-action__icon"><ReplyIcon /></span></span>

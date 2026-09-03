@@ -647,6 +647,66 @@ a {
   line-height: 1;
 }
 
+.hero-install {
+  display: inline-flex;
+  min-height: 52px;
+  align-items: center;
+  gap: 18px;
+  margin-top: 21px;
+  border-radius: 999px;
+  background: var(--x-blue);
+  color: #fff;
+  padding: 9px 15px 9px 19px;
+  font-size: 14px;
+  font-weight: 740;
+  line-height: 1.15;
+  box-shadow: 0 0 0 0 rgba(29, 155, 240, 0);
+  transition:
+    background 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.hero-install > span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.hero-install small {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 10px;
+  font-weight: 520;
+  letter-spacing: 0;
+}
+
+.hero-install svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+  transition: transform 180ms ease;
+}
+
+.hero-install:hover {
+  background: #1a8cd8;
+  box-shadow: 0 0 0 5px rgba(29, 155, 240, 0.12);
+  transform: translateY(-1px);
+}
+
+.hero-install:hover svg {
+  transform: translate(2px, -2px);
+}
+
+.hero-install:focus-visible,
+.x-header__cta:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
 .post-actions--axe {
   grid-template-columns: repeat(5, 1fr);
   margin-top: 10px;
@@ -1293,6 +1353,11 @@ a {
 
   .axe-statement h1 {
     font-size: 28px;
+  }
+
+  .hero-install {
+    min-height: 48px;
+    margin-top: 18px;
   }
 
   .workflow-shell,

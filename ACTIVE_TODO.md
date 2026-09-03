@@ -56,9 +56,10 @@ This checklist reflects Axe as it exists now and the work required to put it in 
 - [x] Rework the landing page into an X-native timeline using a sourced creator post and familiar interaction motion
 - [x] Select unlisted Chrome Web Store distribution for the alpha
 - [x] Create local Privacy, Terms, and Support pages and connect them from the landing-page footer
-- [ ] Finish Chrome Web Store developer registration and payment
+- [x] Finish Chrome Web Store developer registration and payment
 - [x] Publish privacy, terms, and support pages on the Axe domain
-- [ ] Prepare the Chrome Web Store icon, screenshots, descriptions, privacy disclosures, and permission explanations
+- [ ] Prepare the Chrome Web Store icon, screenshots, descriptions, privacy disclosures, and permission explanations (everything is saved except the required product screenshot)
+- [x] Create the unlisted Axe Web Store draft and upload production package `0.1.0`
 - [ ] Submit the extension as an unlisted Chrome Web Store listing and address any review feedback
 - [x] Push the complete current local work to GitHub
 - [x] Deploy the latest backend to Vercel

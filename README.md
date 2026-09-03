@@ -79,7 +79,7 @@ Build the extension against the deployed backend:
 npm run build:extension:production
 ```
 
-This uses `https://axe-psi.vercel.app`.
+This uses the public production domain `https://axe.oddpages.site`.
 
 ## Build everything
 
