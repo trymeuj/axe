@@ -58,7 +58,15 @@ export async function extractCombinedReplyOpportunities(
 ): Promise<AnalyzedReplyOpportunity[]> {
   if (candidates.length === 0) return [];
 
-  const postSample = candidates
+  const uniqueCandidates = [...new Map(candidates.map((candidate) => [candidate.id, candidate])).values()];
+  if (uniqueCandidates.length !== candidates.length) {
+    console.warn("Combined analysis removed duplicate candidate IDs", {
+      supplied: candidates.length,
+      unique: uniqueCandidates.length,
+    });
+  }
+
+  const postSample = uniqueCandidates
     .map((post, index) =>
       `[RANK:${index + 1}] [POST_ID:${post.id}] [CREATOR:@${post.creatorUsername}] ${post.text}`
     )
@@ -126,14 +134,17 @@ Rules:
           properties: {
             topics: {
               type: "array",
-              minItems: candidates.length,
-              maxItems: candidates.length,
+              minItems: uniqueCandidates.length,
+              maxItems: uniqueCandidates.length,
               items: {
                 type: "object",
                 properties: {
                   title: { type: "string" },
                   miniPost: { type: "string" },
-                  sourcePostId: { type: "string" },
+                  sourcePostId: {
+                    type: "string",
+                    enum: uniqueCandidates.map((candidate) => candidate.id),
+                  },
                   worthReplying: { type: "boolean" },
                   replyDirections: {
                     type: "array",
@@ -164,7 +175,7 @@ Rules:
   const parsed = JSON.parse(response.choices[0].message.content ?? "{}");
   if (!Array.isArray(parsed.topics)) return [];
 
-  const candidateById = new Map(candidates.map((candidate) => [candidate.id, candidate]));
+  const candidateById = new Map(uniqueCandidates.map((candidate) => [candidate.id, candidate]));
   const resultById = new Map<string, AnalyzedReplyOpportunity>();
   let selected = 0;
 
@@ -188,8 +199,13 @@ Rules:
       }
 
       const candidate = candidateById.get(value.sourcePostId);
-      if (!candidate || resultById.has(value.sourcePostId)) {
-        throw new Error(`Combined analysis returned an unknown or duplicate post ID: ${value.sourcePostId}`);
+      if (!candidate) {
+        console.warn("Combined analysis ignored an unknown post ID", { sourcePostId: value.sourcePostId });
+        continue;
+      }
+      if (resultById.has(value.sourcePostId)) {
+        console.warn("Combined analysis ignored a duplicate post ID", { sourcePostId: value.sourcePostId });
+        continue;
       }
 
       const directions = Array.isArray(value.replyDirections)
@@ -215,11 +231,19 @@ Rules:
       });
   }
 
-  if (resultById.size !== candidates.length) {
-    throw new Error(`Combined analysis returned ${resultById.size} of ${candidates.length} required post IDs`);
+  if (resultById.size !== uniqueCandidates.length) {
+    console.warn("Combined analysis returned a partial exact-ID result", {
+      expected: uniqueCandidates.length,
+      returned: resultById.size,
+      missingPostIds: uniqueCandidates
+        .filter((candidate) => !resultById.has(candidate.id))
+        .map((candidate) => candidate.id),
+    });
   }
 
-  return candidates.map((candidate) => resultById.get(candidate.id)!);
+  return uniqueCandidates
+    .map((candidate) => resultById.get(candidate.id))
+    .filter((result): result is AnalyzedReplyOpportunity => result !== undefined);
 }
 
 export async function extractRecentTopics(

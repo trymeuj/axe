@@ -79,15 +79,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    candidates.sort((a, b) =>
+    const uniqueCandidates = [...new Map(candidates.map((candidate) => [candidate.id, candidate])).values()];
+    if (uniqueCandidates.length !== candidates.length) {
+      console.warn("v0 discovery removed duplicate candidate IDs", {
+        supplied: candidates.length,
+        unique: uniqueCandidates.length,
+      });
+    }
+
+    uniqueCandidates.sort((a, b) =>
       b.score - a.score || new Date(b.tweetedAt).getTime() - new Date(a.tweetedAt).getTime()
     );
 
-    const analyzed = await extractCombinedReplyOpportunities(candidates);
+    const candidatesForAnalysis = uniqueCandidates.slice(0, VISIBLE_POSTS);
+    const analyzed = await extractCombinedReplyOpportunities(candidatesForAnalysis);
 
     return NextResponse.json({
-      posts: analyzed.slice(0, VISIBLE_POSTS),
-      candidateCount: candidates.length,
+      posts: analyzed,
+      candidateCount: uniqueCandidates.length,
       creatorCount: usernames.length,
       failedCreators,
       refreshedAt: now.toISOString(),
