@@ -17,3 +17,6 @@ coverage/
 
 # Local deployment metadata
 .vercel/
+
+# Local-only video production workspace
+video/
