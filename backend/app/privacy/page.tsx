@@ -33,6 +33,22 @@ export default function PrivacyPage() {
 
       <section>
         <h2>Information Axe processes</h2>
+        <h3>Axe account and extension access</h3>
+        <p>
+          When you sign in with Google, Axe receives and stores your Google
+          account identifier, email address, name, and profile image. Axe uses
+          this information to create your account, recognize you when you sign
+          in, and determine whether your account has access to paid features.
+          Signing in to Axe does not connect or authorize your X account.
+        </p>
+        <p>
+          When you connect the browser extension, Axe creates a revocable
+          extension session. The session token is stored in Chrome&apos;s local
+          extension storage, while only a cryptographic hash of that token is
+          stored in Axe&apos;s database. The session is used only to authenticate
+          requests from the extension to Axe.
+        </p>
+
         <h3>Creator searches and public X data</h3>
         <p>
           When you search for or track a creator, Axe sends the search text or
@@ -52,9 +68,9 @@ export default function PrivacyPage() {
         <h3>Information kept in your browser</h3>
         <p>
           Your tracked creators, generated results, selected Idea Slate, scroll
-          position, and drafts are stored locally in your browser. Draft text is
-          not sent to Axe, TwitterAPI.io, or OpenAI. Clipboard access is used only
-          after you press <strong>Copy post</strong>.
+          position, drafts, and extension session token are stored locally in
+          your browser. Draft text is not sent to Axe, TwitterAPI.io, or OpenAI.
+          Clipboard access is used only after you press <strong>Copy post</strong>.
         </p>
 
         <h3>Operational information</h3>
@@ -85,6 +101,7 @@ export default function PrivacyPage() {
         <ul>
           <li>To search for public creators and display their public profiles.</li>
           <li>To rank recent public posts and generate inspiration.</li>
+          <li>To authenticate your Axe account and enforce access entitlements.</li>
           <li>To maintain, secure, debug, and improve Axe&apos;s core features.</li>
           <li>To respond to support, privacy, or legal requests.</li>
         </ul>
@@ -99,13 +116,14 @@ export default function PrivacyPage() {
         <p>Axe relies on the following providers to deliver its core service:</p>
         <ul>
           <li><strong>Vercel</strong> for website, API, and operational hosting.</li>
+          <li><strong>Google</strong> for signing in to an Axe account.</li>
+          <li><strong>Neon</strong> for account, entitlement, and extension-session records.</li>
           <li><strong>TwitterAPI.io</strong> for retrieving public X data.</li>
           <li><strong>OpenAI</strong> for processing selected public post content.</li>
         </ul>
         <p>
-          Neon database infrastructure is connected to the Axe project, but the
-          current extension flow does not persist tracked creators, generated
-          results, or drafts there.
+          Axe does not persist tracked creators, generated results, or drafts in
+          its database. These remain in your browser.
         </p>
         <p>
           Information may also be disclosed when required by law, to protect the
@@ -119,9 +137,10 @@ export default function PrivacyPage() {
         <h2>Storage and retention</h2>
         <p>
           Locally stored information remains in your browser until you remove it,
-          clear the extension&apos;s storage, or uninstall Axe. The current extension
-          flow does not create a persistent Axe account record or store drafts in
-          Axe&apos;s database.
+          clear the extension&apos;s storage, or uninstall Axe. Extension sessions
+          expire after 30 days and can be revoked by disconnecting the account.
+          Account and entitlement records remain while your Axe account exists,
+          unless longer retention is required for security or legal reasons.
         </p>
         <p>
           Infrastructure logs are retained according to the hosting plan and are
