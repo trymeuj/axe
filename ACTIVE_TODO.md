@@ -1,6 +1,6 @@
 # Axe Active To-Do
 
-Last reviewed: 2026-09-09
+Last reviewed: 2026-09-11
 
 This checklist reflects Axe as it exists now and the work required to put it in front of the first ten users. Product principles and decisions live in [PRODUCT_DIRECTION.md](./PRODUCT_DIRECTION.md). Service status lives in [SERVICES.md](./SERVICES.md).
 
@@ -75,10 +75,13 @@ This checklist reflects Axe as it exists now and the work required to put it in 
 ### Settle the commercial flow
 
 - [ ] Choose the first paid offer: price, billing period, trial/refund policy, and whether access is subscription-based or a one-time purchase
+- [x] Create a disposable Razorpay Test Mode monthly plan so pricing does not block implementation
 - [ ] Define the exact website journey from landing page to Google sign-in, Razorpay checkout, successful payment, extension installation, and first use
 - [ ] Define what an unpaid, pending, paid, cancelled, expired, refunded, or payment-failed user sees on both the website and in the extension
 
 ### Website authentication and checkout
+
+Razorpay Subscriptions is implemented on `uj` against the disposable Test Mode plan. The items below remain open until the current Neon migration, test credentials, webhook, and end-to-end checkout are verified.
 
 - [x] Implement Google OAuth with Auth.js on the Axe website; do not add Clerk or X OAuth
 - [x] Create or link the corresponding Axe user in Neon after successful Google authentication

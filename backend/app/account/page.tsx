@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth, signOut } from "@/lib/auth";
 import { getUserAccess } from "@/lib/extension-auth";
 import styles from "../auth/auth.module.css";
+import { SubscribeButton } from "./SubscribeButton";
 
 export default async function AccountPage() {
   const session = await auth();
@@ -17,9 +18,10 @@ export default async function AccountPage() {
         <p className={styles.copy}>
           {access.paid
             ? "Your paid access is active. You can connect and use the Axe extension."
-            : "You are signed in. Razorpay checkout will be added in the next implementation step."}
+            : "You are signed in. Complete checkout to unlock Axe in your extension."}
         </p>
         <p className={styles.identity}>{session.user.email}</p>
+        {!access.paid ? <SubscribeButton email={session.user.email} name={session.user.name} /> : null}
         <form action={async () => {
           "use server";
           await signOut({ redirectTo: "/" });

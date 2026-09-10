@@ -7,8 +7,12 @@
 .card form { margin-top: 28px; }
 .primary { width: 100%; min-height: 50px; border: 0; border-radius: 999px; background: #f2f2f2; color: #08090a; font-size: 15px; font-weight: 780; cursor: pointer; transition: background 160ms ease, transform 160ms ease; }
 .primary:hover { background: #fff; transform: translateY(-1px); }
+.primary:disabled { cursor: wait; opacity: .68; transform: none; }
 .secondary { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; padding: 0 18px; border: 1px solid #30363d; border-radius: 999px; background: transparent; color: #f2f2f2; font-weight: 700; text-decoration: none; cursor: pointer; }
 .success { color: #55d6a9; }
 .warning { color: #f5b544; }
 .identity { margin-top: 18px; color: #9aa4af; font-size: 14px; }
+.checkoutAction { margin-top: 24px; }
+.checkoutMessage { margin: 12px 4px 0; color: #f5b544; font-size: 13px; line-height: 1.45; }
+.paymentNote { display: block; margin: 12px 4px 0; color: #71767b; font-size: 12px; line-height: 1.45; }
 @media (max-width: 520px) { .card { padding: 28px 22px; border-radius: 20px; } }
