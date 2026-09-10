@@ -153,14 +153,19 @@ export default function Home() {
             <a href="#how-it-works">How it works</a>
             <Link href="/privacy">Privacy</Link>
           </nav>
-          <a
-            className="x-header__cta"
-            href={CHROME_WEB_STORE_URL}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Get Axe — free
-          </a>
+          <div className="x-header__actions">
+            <Link className="x-header__signin" href="/auth/signin">
+              Sign in
+            </Link>
+            <a
+              className="x-header__cta"
+              href={CHROME_WEB_STORE_URL}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Get Axe — free
+            </a>
+          </div>
         </div>
       </header>
 

@@ -140,6 +140,29 @@ a {
   color: #fff;
 }
 
+.x-header__actions {
+  display: flex;
+  justify-self: end;
+  align-items: center;
+  gap: 10px;
+}
+
+.x-header__signin {
+  border-radius: 999px;
+  color: var(--x-text);
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 650;
+  transition:
+    background 180ms ease,
+    color 180ms ease;
+}
+
+.x-header__signin:hover {
+  background: var(--x-hover);
+  color: #fff;
+}
+
 .x-header__cta {
   justify-self: end;
   border-radius: 999px;
@@ -710,6 +733,7 @@ a {
 }
 
 .hero-install:focus-visible,
+.x-header__signin:focus-visible,
 .x-header__cta:focus-visible,
 .workflow-install a:focus-visible {
   outline: 2px solid #fff;
@@ -1356,8 +1380,17 @@ a {
     display: none;
   }
 
-  .x-header__cta {
+  .x-header__actions {
     grid-column: 2;
+    gap: 4px;
+  }
+
+  .x-header__signin {
+    padding: 9px 10px;
+    font-size: 12px;
+  }
+
+  .x-header__cta {
     padding: 9px 14px;
     font-size: 12px;
   }
