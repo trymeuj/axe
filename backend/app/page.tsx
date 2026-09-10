@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
+import { auth } from "@/lib/auth";
 import { CHROME_WEB_STORE_URL } from "@/lib/links";
 import ScrollCue from "./components/ScrollCue";
 
@@ -140,7 +141,9 @@ function AxeIdentity({ label }: { label?: string }) {
   );
 }
 
-export default function Home() {
+export default async function Home() {
+  const session = await auth();
+
   return (
     <main className="x-landing" id="top">
       <header className="x-header">
@@ -154,8 +157,11 @@ export default function Home() {
             <Link href="/privacy">Privacy</Link>
           </nav>
           <div className="x-header__actions">
-            <Link className="x-header__signin" href="/auth/signin">
-              Sign in
+            <Link
+              className="x-header__signin"
+              href={session?.user?.id ? "/account" : "/auth/signin"}
+            >
+              {session?.user?.id ? "Account" : "Sign in"}
             </Link>
             <a
               className="x-header__cta"
