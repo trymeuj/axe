@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Axe",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Find timely X posts worth replying to and shape replies in your own voice.",
   "permissions": ["clipboardWrite", "storage"],
   "host_permissions": [

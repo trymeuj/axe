@@ -1,13 +1,23 @@
-import { copyFileSync, mkdirSync, readdirSync, existsSync } from "fs";
+import { copyFileSync, mkdirSync, existsSync, readFileSync, writeFileSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const dist = resolve(__dirname, "../dist");
 const assets = resolve(dist, "assets");
+const buildTarget = process.argv[2] ?? "local";
 
 // Copy manifest
 copyFileSync(resolve(__dirname, "../manifest.json"), resolve(dist, "manifest.json"));
+
+if (buildTarget === "production") {
+  const manifestPath = resolve(dist, "manifest.json");
+  const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+  manifest.host_permissions = manifest.host_permissions.filter(
+    (permission) => !permission.startsWith("http://localhost:")
+  );
+  writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+}
 
 // Copy icons
 mkdirSync(resolve(dist, "icons"), { recursive: true });
@@ -37,4 +47,4 @@ if (existsSync(contentCss)) {
   copyFileSync(contentCss, resolve(assets, "content.css"));
 }
 
-console.log("Post-build complete. dist/ is ready to load as an unpacked extension.");
+console.log(`Post-build complete (${buildTarget}). dist/ is ready to load or package.`);

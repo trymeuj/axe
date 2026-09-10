@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "npm run build:production",
-    "build:local": "tsc -b && vite build --mode development && node scripts/post-build.js",
-    "build:production": "tsc -b && vite build --mode production && node scripts/post-build.js",
+    "build:local": "tsc -b && vite build --mode development && node scripts/post-build.js local",
+    "build:production": "tsc -b && vite build --mode production && node scripts/post-build.js production",
     "lint": "eslint .",
     "preview": "vite preview"
   },
