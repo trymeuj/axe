@@ -3,8 +3,13 @@
   "name": "Axe",
   "version": "0.1.0",
   "description": "Find timely X posts worth replying to and shape replies in your own voice.",
-  "permissions": ["clipboardWrite"],
-  "host_permissions": ["https://x.com/*", "https://twitter.com/*"],
+  "permissions": ["clipboardWrite", "storage"],
+  "host_permissions": [
+    "https://x.com/*",
+    "https://twitter.com/*",
+    "http://localhost:3000/*",
+    "https://axe.oddpages.site/*"
+  ],
   "content_scripts": [
     {
       "matches": ["https://x.com/*", "https://twitter.com/*"],

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractCombinedReplyOpportunities, type CombinedTweetForInsight } from "@/lib/ai";
 import { fetchUserTweets, type XTweet } from "@/lib/xapi";
+import { requirePaidExtension } from "@/lib/extension-auth";
 
 const FETCH_WINDOW_DAYS = 7;
 const REPLY_WINDOW_HOURS = 48;
@@ -46,6 +47,9 @@ function rankCreatorPosts(posts: XTweet[], creatorUsername: string, now: Date): 
 }
 
 export async function POST(req: NextRequest) {
+  const access = await requirePaidExtension(req);
+  if (!access.ok) return access.response;
+
   try {
     const body = await req.json() as { usernames?: unknown };
     const usernames = Array.isArray(body.usernames)

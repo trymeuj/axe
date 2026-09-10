@@ -1,6 +1,6 @@
 # Axe Product Direction
 
-Last updated: September 1, 2026
+Last updated: September 10, 2026
 
 This is the living product record for Axe. It should describe the product we are actually building now, while keeping later ideas clearly separated from the alpha.
 
@@ -103,7 +103,19 @@ Unknown, duplicate, or missing IDs invalidate the entire refresh. Axe must never
 - Repeated refreshes are blocked during the eight-hour window.
 - Incompatible or corrupted older cached results are discarded rather than displayed.
 
-The alpha does not require user accounts or X OAuth. The tracked creators and discovery state can remain local to the extension for the first ten users.
+Tracked creators, discovery results, the active slate, and drafts can remain local to the extension initially. Paid access, however, requires an Axe account and a server-side entitlement; local storage must never decide whether a user has paid.
+
+## Website, accounts, and paid access
+
+The website is Axe's commercial entry point. A user can learn about Axe, sign in with Google, pay through Razorpay, see their access status, and then install the extension.
+
+The extension may be downloaded before payment, but its core functionality remains locked until the user signs in and Axe's backend confirms an active paid entitlement. The website and extension must recognize the same Axe account. A successful purchase should unlock an already-installed extension without requiring reinstallation.
+
+Neon is the source of truth for Axe users and access. Axe stores the Google identity link, Razorpay customer/subscription/payment references, entitlement status, and the payment-event history needed for support and auditing. Razorpay remains responsible for card, UPI, and banking credentials; Axe must not collect or store raw payment-method data.
+
+Google authentication is for the Axe account only. Axe will implement Google OAuth through Auth.js, link that identity to an Axe user in Neon, and securely hand an authenticated session to the extension. Clerk and X login are not part of this architecture. This does not change the decision to use public X data and does not introduce X OAuth.
+
+Paid TwitterAPI.io and OpenAI endpoints must require authenticated server-side authorization and a usage allowance. Hiding the interface in the extension or storing a paid flag locally is not sufficient protection.
 
 ## Product principles
 
@@ -113,6 +125,32 @@ The alpha does not require user accounts or X OAuth. The tracked creators and di
 - **Natural language:** directions should sound direct and human, not formal, polished, or AI-ish.
 - **On demand:** expensive fetching and AI work happen only when the user requests a refresh.
 - **Simple for ten users:** validate usefulness before building for scale.
+- **Installable but entitlement-gated:** distribution is open, while valuable functionality requires verified paid access.
+- **Payments stay with the payment provider:** Axe stores entitlement and transaction references, never raw payment credentials.
+
+## Landing-page positioning and copy taste
+
+The landing page should not blend the styles of several reference products. References are useful for isolating principles; Axe still needs one coherent position and its own visual identity.
+
+The two useful reference lessons are:
+
+- **Tweet Hunter:** lead with a bold, desirable first-order outcome. Do not weaken the promise merely to make every word defensible or technically exhaustive. The visitor should want the outcome before learning every detail of the mechanism.
+- **Screen Studio:** communicate one clear idea in one clean line, with very little surrounding copy.
+
+Typefully and Magical are not useful copy references for Axe. Phrases such as “write better content,” “save time,” or other second-order benefits feel vague because they do not make the immediate user benefit obvious. The other premium SaaS references may offer visual craft, but they should not determine Axe's positioning.
+
+Axe has a direct first-order problem to own: small creators struggle to grow because they fail to show up consistently, often because they open X without knowing what to post or where to contribute. The page should quietly activate that fear of falling behind, then make Axe feel like the credible solution.
+
+Copy should therefore follow one of two approaches:
+
+1. State a bold, emotionally desirable outcome without timid qualifiers.
+2. State exactly what Axe gives the user in one short, concrete line.
+
+The preferred voice is clean Gen Z: direct, sharp, natural, and confident. Avoid corporate abstractions, polished AI language, vague second-order value, forced slang, excessive explanation, and safety-first qualifiers such as “worth making.” One objective promise is stronger than several technically accurate claims.
+
+The locked hero message is: **“Trying to stay consistent on X / Don’t know what to post daily? / Solve it with Axe and hit bangers.”** The X in the first line should use the X logo rather than plain text. This is the real outcome and must not be replaced by a description of how the product works, such as “your next five replies, found.” The hero does not need an explanatory line beneath this message; the product visual supplies the mechanism.
+
+The locked hero composition takes its cue from Tweet Hunter: large, emotionally direct editorial copy and the primary install CTA on the left; a large, slightly tilted Axe product visual on the right. The visual should show Axe's tracked-creators sidebar, making the mechanism understandable without adding paragraphs. The page should preserve Axe's X-native black, white, and blue language without literally reproducing Tweet Hunter's page.
 
 ## Alpha success criteria
 
@@ -133,7 +171,7 @@ These ideas remain valid possibilities but are not part of the current implement
 - Creator-relative performance baselines and follower normalization.
 - Engagement momentum measured across multiple snapshots.
 - Analysis of the traction received by individual replies.
-- Server-side user accounts, cross-device state, billing, and persistent database storage.
+- Cross-device synchronization of creator lists, discovery results, slates, and drafts.
 - X OAuth or private-account access.
 
 These should be reconsidered only after the first ten users demonstrate that the current reply-opportunity workflow is useful.

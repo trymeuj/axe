@@ -1,93 +1,76 @@
 import {
+  index,
   pgTable,
   text,
   timestamp,
-  integer,
-  jsonb,
-  primaryKey,
-  index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
-// Public-account MVP user profile. No X OAuth tokens are stored.
-export const users = pgTable("users", {
-  id: text("id").primaryKey(),
-  xId: text("x_id").notNull().unique(),
-  xUsername: text("x_username").notNull(),
-  xDisplayName: text("x_display_name").notNull(),
-  xProfileImage: text("x_profile_image"),
-  followersCount: integer("followers_count").default(0),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+export const users = pgTable(
+  "users",
+  {
+    id: text("id").primaryKey(),
+    googleSubject: text("google_subject").notNull(),
+    email: text("email").notNull(),
+    name: text("name"),
+    image: text("image"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    lastLoginAt: timestamp("last_login_at").defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("users_google_subject_idx").on(t.googleSubject),
+    uniqueIndex("users_email_idx").on(t.email),
+  ]
+);
+
+export const entitlements = pgTable("entitlements", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  status: text("status").notNull().default("unpaid"),
+  validUntil: timestamp("valid_until"),
+  source: text("source").notNull().default("none"),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const trackedCreators = pgTable(
-  "tracked_creators",
+export const extensionConnections = pgTable(
+  "extension_connections",
   {
+    id: text("id").primaryKey(),
+    userCodeHash: text("user_code_hash").notNull(),
+    pollSecretHash: text("poll_secret_hash").notNull(),
+    userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
+    status: text("status").notNull().default("pending"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    expiresAt: timestamp("expires_at").notNull(),
+    approvedAt: timestamp("approved_at"),
+    consumedAt: timestamp("consumed_at"),
+  },
+  (t) => [
+    uniqueIndex("extension_connections_user_code_idx").on(t.userCodeHash),
+    index("extension_connections_expiry_idx").on(t.expiresAt),
+  ]
+);
+
+export const extensionSessions = pgTable(
+  "extension_sessions",
+  {
+    id: text("id").primaryKey(),
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    creatorXId: text("creator_x_id").notNull(),
-    creatorUsername: text("creator_username").notNull(),
-    creatorDisplayName: text("creator_display_name").notNull(),
-    creatorProfileImage: text("creator_profile_image"),
-    creatorFollowersCount: integer("creator_followers_count").default(0),
-    addedAt: timestamp("added_at").defaultNow().notNull(),
+    tokenHash: text("token_hash").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    expiresAt: timestamp("expires_at").notNull(),
+    lastUsedAt: timestamp("last_used_at").defaultNow().notNull(),
+    revokedAt: timestamp("revoked_at"),
   },
   (t) => [
-    primaryKey({ columns: [t.userId, t.creatorXId] }),
-    index("tracked_creators_user_idx").on(t.userId),
+    uniqueIndex("extension_sessions_token_idx").on(t.tokenHash),
+    index("extension_sessions_user_idx").on(t.userId),
   ]
 );
-
-export const tweets = pgTable(
-  "tweets",
-  {
-    id: text("id").primaryKey(),
-    authorXId: text("author_x_id").notNull(),
-    authorUsername: text("author_username").notNull(),
-    text: text("text").notNull(),
-    likeCount: integer("like_count").default(0),
-    replyCount: integer("reply_count").default(0),
-    retweetCount: integer("retweet_count").default(0),
-    bookmarkCount: integer("bookmark_count").default(0),
-    impressionCount: integer("impression_count").default(0),
-    tweetedAt: timestamp("tweeted_at").notNull(),
-    fetchedAt: timestamp("fetched_at").defaultNow().notNull(),
-  },
-  (t) => [
-    index("tweets_author_idx").on(t.authorXId),
-    index("tweets_tweeted_at_idx").on(t.tweetedAt),
-  ]
-);
-
-export const insights = pgTable(
-  "insights",
-  {
-    id: text("id").primaryKey(),
-    creatorXId: text("creator_x_id").notNull(),
-    weekStart: timestamp("week_start").notNull(),
-    topTweets: jsonb("top_tweets").$type<TweetSummary[]>().default([]),
-    topics: jsonb("topics").$type<string[]>().default([]),
-    patterns: jsonb("patterns").$type<string[]>().default([]),
-    postingFrequency: text("posting_frequency"),
-    summary: text("summary"),
-    generatedAt: timestamp("generated_at").defaultNow().notNull(),
-  },
-  (t) => [
-    index("insights_creator_idx").on(t.creatorXId),
-    index("insights_week_idx").on(t.weekStart),
-  ]
-);
-
-export type TweetSummary = {
-  id: string;
-  text: string;
-  likeCount: number;
-  replyCount: number;
-  tweetedAt: string;
-};
 
 export type User = typeof users.$inferSelect;
-export type TrackedCreator = typeof trackedCreators.$inferSelect;
-export type Tweet = typeof tweets.$inferSelect;
-export type Insight = typeof insights.$inferSelect;
+export type Entitlement = typeof entitlements.$inferSelect;

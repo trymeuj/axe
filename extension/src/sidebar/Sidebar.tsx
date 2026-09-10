@@ -5,7 +5,9 @@ import {
   type CombinedPost,
   type Creator,
   type CreatorSearchResult,
+  type ExtensionAccess,
 } from "../lib/api";
+import { clearExtensionToken, getExtensionToken, setExtensionToken } from "../lib/auth";
 import {
   getCombinedDiscovery,
   getTrackedCreators,
@@ -30,6 +32,11 @@ function getSavedIdea(): IdeaSelection | null {
 }
 
 export default function Sidebar() {
+  const [access, setAccess] = useState<ExtensionAccess | null>(null);
+  const [accessLoading, setAccessLoading] = useState(true);
+  const [checkingAccess, setCheckingAccess] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  const [accessError, setAccessError] = useState("");
   const [tab, setTab] = useState<Tab>("posts");
   const [creators, setCreators] = useState<Creator[]>(getTrackedCreators);
   const [discovery, setDiscovery] = useState<CombinedDiscovery | null>(getCombinedDiscovery);
@@ -38,6 +45,91 @@ export default function Sidebar() {
   const [selectedIdea, setSelectedIdea] = useState<IdeaSelection | null>(getSavedIdea);
 
   useEffect(() => setTrackedCreators(creators), [creators]);
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      const token = await getExtensionToken();
+      if (!token) {
+        if (active) {
+          setAccess({ authenticated: false, paid: false, user: null });
+          setAccessLoading(false);
+        }
+        return;
+      }
+
+      try {
+        const currentAccess = await api.getExtensionAccess();
+        if (active) setAccess(currentAccess);
+      } catch {
+        if (active) setAccess({ authenticated: false, paid: false, user: null });
+      } finally {
+        if (active) setAccessLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, []);
+
+  const connectAccount = async () => {
+    if (connecting) return;
+    setConnecting(true);
+    setAccessError("");
+    try {
+      const connection = await api.startExtensionConnection();
+      window.open(connection.connectUrl, "_blank", "noopener,noreferrer");
+      const expiresAt = new Date(connection.expiresAt).getTime();
+
+      while (Date.now() < expiresAt) {
+        await new Promise((resolve) => window.setTimeout(resolve, 2_000));
+        const result = await api.exchangeExtensionConnection(connection.connectionId, connection.pollSecret);
+        if (result.status === "connected") {
+          await setExtensionToken(result.token);
+          setAccess(result.access);
+          return;
+        }
+      }
+      throw new Error("The connection expired. Please try again.");
+    } catch (error) {
+      setAccessError(error instanceof Error ? error.message : "Could not connect Axe right now.");
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  const disconnectAccount = async () => {
+    try { await api.revokeExtensionAccess(); } catch { /* Clear this device either way. */ }
+    await clearExtensionToken();
+    setAccess({ authenticated: false, paid: false, user: null });
+  };
+
+  const checkPaidAccess = async () => {
+    setCheckingAccess(true);
+    setAccessError("");
+    try {
+      setAccess(await api.getExtensionAccess());
+    } catch (error) {
+      setAccessError(error instanceof Error ? error.message : "Could not check access right now.");
+    } finally {
+      setCheckingAccess(false);
+    }
+  };
+
+  if (accessLoading) return <AccessGate mode="loading" />;
+  if (!access?.authenticated) {
+    return <AccessGate mode="signed-out" connecting={connecting} error={accessError} onConnect={connectAccount} />;
+  }
+  if (!access.paid) {
+    return (
+      <AccessGate
+        mode="unpaid"
+        email={access.user?.email}
+        connecting={checkingAccess}
+        error={accessError}
+        onCheckAccess={checkPaidAccess}
+        onDisconnect={disconnectAccount}
+      />
+    );
+  }
 
   const selectIdea = (creator: Creator, topic: CombinedPost) => {
     const selection = { creator, topic };
@@ -128,6 +220,58 @@ export default function Sidebar() {
   );
 }
 
+function AccessGate({
+  mode,
+  connecting = false,
+  email,
+  error,
+  onConnect,
+  onCheckAccess,
+  onDisconnect,
+}: {
+  mode: "loading" | "signed-out" | "unpaid";
+  connecting?: boolean;
+  email?: string;
+  error?: string;
+  onConnect?: () => void;
+  onCheckAccess?: () => void;
+  onDisconnect?: () => void;
+}) {
+  return (
+    <div className="axe-access-shell">
+      <div className="axe-access-card axe-fade-in">
+        <div className="axe-logo"><span>A</span></div>
+        {mode === "loading" ? (
+          <><MiniSpinner /><p>Checking access</p></>
+        ) : mode === "signed-out" ? (
+          <>
+            <p className="axe-access-kicker">Axe account</p>
+            <h1>Activate Axe</h1>
+            <p>Sign in with Google to connect this extension to your Axe account.</p>
+            <button className="axe-access-primary" onClick={onConnect} disabled={connecting}>
+              {connecting ? <><MiniSpinner /> Waiting for sign in</> : "Sign in with Google"}
+            </button>
+            {error && <p className="axe-card-error">{error}</p>}
+          </>
+        ) : (
+          <>
+            <p className="axe-access-kicker">Account connected</p>
+            <h1>Unlock Axe</h1>
+            <p>Your account does not have paid access yet.</p>
+            {email && <span className="axe-access-email">{email}</span>}
+            <button className="axe-access-primary" onClick={() => window.open(api.accountUrl, "_blank", "noopener,noreferrer")}>Get Axe</button>
+            <button className="axe-access-secondary" onClick={onCheckAccess} disabled={connecting}>
+              {connecting ? <><MiniSpinner /> Checking access</> : "I’ve paid, check again"}
+            </button>
+            <button className="axe-access-link" onClick={onDisconnect}>Use another account</button>
+            {error && <p className="axe-card-error">{error}</p>}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function PostsView({
   creators,
   discovery,
@@ -186,7 +330,7 @@ function PostsView({
         </div>
         {!coolingDown && (
           <button className="axe-discover-button" onClick={onRefresh} disabled={refreshing}>
-            {refreshing ? <><MiniSpinner /> Finding posts</> : <><RefreshIcon /> Find posts for me</>}
+            {refreshing ? <><MiniSpinner /> Finding posts</> : <><RefreshIcon /> Find new posts for me</>}
           </button>
         )}
         {discovery && (

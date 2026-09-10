@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchUserByUsername } from "@/lib/xapi";
 import { fetchCreatorInsights } from "@/lib/creator";
+import { requirePaidExtension } from "@/lib/extension-auth";
 
 // GET /api/v0/creator/insights?username=xxx&profileOnly=true
 // profileOnly=true: returns { creator, insight: null } immediately
 // Otherwise: fetch tweets + LLM insights, return (no DB — extension stores in localStorage)
 export async function GET(req: NextRequest) {
+  const access = await requirePaidExtension(req);
+  if (!access.ok) return access.response;
+
   const username = req.nextUrl.searchParams.get("username")?.replace("@", "");
   const profileOnly = req.nextUrl.searchParams.get("profileOnly") === "true";
 

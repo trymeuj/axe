@@ -1,0 +1,14 @@
+.page { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: #000; color: #f2f2f2; }
+.card { width: min(100%, 420px); padding: 36px; border: 1px solid #24282d; border-radius: 24px; background: #0b0d10; box-shadow: 0 24px 80px rgba(0,0,0,.48); }
+.mark { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 12px; background: #1d9bf0; color: #fff; font-size: 22px; font-weight: 850; }
+.eyebrow { margin-top: 28px; color: #69bdf5; font-size: 12px; font-weight: 760; letter-spacing: .16em; text-transform: uppercase; }
+.card h1 { margin-top: 8px; font-size: clamp(28px, 6vw, 38px); line-height: 1.08; letter-spacing: -.045em; }
+.copy { margin-top: 14px; color: #9aa4af; font-size: 15px; line-height: 1.55; }
+.card form { margin-top: 28px; }
+.primary { width: 100%; min-height: 50px; border: 0; border-radius: 999px; background: #f2f2f2; color: #08090a; font-size: 15px; font-weight: 780; cursor: pointer; transition: background 160ms ease, transform 160ms ease; }
+.primary:hover { background: #fff; transform: translateY(-1px); }
+.secondary { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; padding: 0 18px; border: 1px solid #30363d; border-radius: 999px; background: transparent; color: #f2f2f2; font-weight: 700; text-decoration: none; cursor: pointer; }
+.success { color: #55d6a9; }
+.warning { color: #f5b544; }
+.identity { margin-top: 18px; color: #9aa4af; font-size: 14px; }
+@media (max-width: 520px) { .card { padding: 28px 22px; border-radius: 20px; } }

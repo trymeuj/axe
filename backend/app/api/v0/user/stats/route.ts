@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchOwnStats } from "@/lib/xapi";
+import { requirePaidExtension } from "@/lib/extension-auth";
 
-// Public (auth-less): GET /api/v0/user/stats?username=xxx
 export async function GET(req: NextRequest) {
+  const access = await requirePaidExtension(req);
+  if (!access.ok) return access.response;
+
   const username = req.nextUrl.searchParams.get("username")?.replace("@", "");
   if (!username) {
     return NextResponse.json(

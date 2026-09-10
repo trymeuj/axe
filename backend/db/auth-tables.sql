@@ -1,2 +1,3 @@
--- X OAuth / Auth.js tables are intentionally not used by the public-account MVP.
--- This placeholder remains only to make the decision explicit for older setups.
+-- Axe uses Auth.js JWT sessions for the website, so Auth.js adapter tables are not required.
+-- Google-linked users, paid entitlements, one-time extension connections, and hashed
+-- extension sessions are defined in db/schema.ts and managed through Drizzle.

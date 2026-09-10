@@ -1,6 +1,6 @@
 # Axe Active To-Do
 
-Last reviewed: 2026-09-01
+Last reviewed: 2026-09-09
 
 This checklist reflects Axe as it exists now and the work required to put it in front of the first ten users. Product principles and decisions live in [PRODUCT_DIRECTION.md](./PRODUCT_DIRECTION.md). Service status lives in [SERVICES.md](./SERVICES.md).
 
@@ -70,6 +70,49 @@ This checklist reflects Axe as it exists now and the work required to put it in 
 - [ ] Write a short installation and first-use guide
 - [ ] Add a lightweight way for testers to report bad cards, bad directions, and product confusion
 
+## Paid access and account infrastructure
+
+### Settle the commercial flow
+
+- [ ] Choose the first paid offer: price, billing period, trial/refund policy, and whether access is subscription-based or a one-time purchase
+- [ ] Define the exact website journey from landing page to Google sign-in, Razorpay checkout, successful payment, extension installation, and first use
+- [ ] Define what an unpaid, pending, paid, cancelled, expired, refunded, or payment-failed user sees on both the website and in the extension
+
+### Website authentication and checkout
+
+- [x] Implement Google OAuth with Auth.js on the Axe website; do not add Clerk or X OAuth
+- [x] Create or link the corresponding Axe user in Neon after successful Google authentication
+- [ ] Create Google OAuth credentials, configure local and production callback URLs, and add the secrets locally and in Vercel
+- [ ] Complete a real Google sign-in end to end after credentials are configured
+- [ ] Add a website account and billing area showing access status and the appropriate payment action
+- [ ] Integrate Razorpay Checkout without collecting or storing raw card, UPI, or banking credentials in Axe
+- [ ] Add verified Razorpay webhooks with signature validation, idempotent processing, and safe handling of delayed or repeated events
+- [ ] Add clear payment-success, payment-pending, payment-failure, cancellation, and retry experiences
+
+### Database and paid entitlement
+
+- [ ] Add Neon records for users, linked Google identity, Razorpay customer/subscription/payment references, current entitlement, and auditable payment events
+- [ ] Store only the payment metadata Axe needs; Razorpay remains responsible for sensitive payment-method data
+- [x] Make the backend—not local extension state—the source of truth for paid access
+- [x] Create an authenticated entitlement endpoint the extension can use to verify whether the signed-in user may use Axe
+- [ ] Decide how quickly cancellations, failed renewals, refunds, and manual access changes should affect extension access
+
+### Extension access
+
+- [x] Add **Sign in with Google** to the extension using a secure, expiring, one-time Auth.js website-to-extension pairing flow
+- [x] Store a revocable extension session token on the device while keeping only its cryptographic hash in Neon
+- [x] Allow anyone to install the extension, but lock creator search, discovery, and other paid functionality until a valid entitlement is confirmed
+- [ ] Give unpaid users a clear route to purchase on the website and let newly paid users re-check access without reinstalling
+- [ ] Handle expired sessions and temporary network failures without incorrectly granting access or trapping valid customers
+
+### Security, launch, and operations
+
+- [ ] Protect TwitterAPI.io and OpenAI endpoints with authenticated, server-enforced usage allowances tied to the paid user
+- [x] Prevent clients from granting themselves access by modifying local storage or calling paid endpoints directly
+- [ ] Update Privacy, Terms, Support, and Chrome Web Store disclosures for Google authentication, Neon account storage, Razorpay payments, and deletion/refund handling
+- [ ] Test new purchase, returning login, pending payment, failed renewal, cancellation, refund, logout, reinstall, and account-deletion flows
+- [ ] Add basic internal visibility for customer access and payment-webhook failures without exposing sensitive payment data
+
 ## First-ten-user rollout
 
 - [ ] Invite two trusted testers first
@@ -80,16 +123,12 @@ This checklist reflects Axe as it exists now and the work required to put it in 
 - [ ] Measure whether users return, open Inspiration Cards, write drafts, and copy posts
 - [ ] Decide after the alpha whether Axe is useful and sellable enough to continue
 
-## Before access expands beyond private testing
-
-- [ ] Protect the paid TwitterAPI.io and OpenAI endpoints with a server-enforced usage allowance. Owner: Ujjwal. Intentionally deferred during private testing.
-
 ## Later, after the alpha proves value
 
 - [ ] Decide whether to build the original second mode for framing a user's rough idea
 - [ ] Decide whether creator writing-pattern analysis adds meaningful value
 - [ ] Reconsider public-account personalization only if testers need it
-- [ ] Move local creator/results/draft data into Neon only if cross-device or account persistence becomes necessary
+- [ ] Decide whether creator lists, results, and drafts should move from local extension storage to Neon for cross-device persistence; paid entitlement data is server-side regardless
 - [ ] Decide whether to make the Chrome Web Store listing public after the alpha
 
 ## Explicitly out of scope for this alpha

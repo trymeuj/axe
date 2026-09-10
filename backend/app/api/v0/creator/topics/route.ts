@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractRecentTopics } from "@/lib/ai";
 import { fetchUserTweets } from "@/lib/xapi";
+import { requirePaidExtension } from "@/lib/extension-auth";
 
 const WINDOW_DAYS = 7;
 const REPLY_WINDOW_HOURS = 48;
@@ -41,6 +42,9 @@ function rankRecentPosts<T extends {
 // GET /api/v0/creator/topics?username=xxx
 // Fetches a seven-day timeline but ranks only reply opportunities from the last 48 hours.
 export async function GET(req: NextRequest) {
+  const access = await requirePaidExtension(req);
+  if (!access.ok) return access.response;
+
   const username = req.nextUrl.searchParams.get("username")?.replace("@", "").trim();
 
   if (!username) {

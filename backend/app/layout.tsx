@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Axe | Stay consistent on X",
+  title: "Axe | Consistency on X, solved",
   description:
-    "Track creators that inspire you, find the posts worth joining, and build a daily reply habit on X.",
+    "Axe finds viral posts from creators you follow, so you always know where to jump in on X.",
 };
 
 export default function RootLayout({

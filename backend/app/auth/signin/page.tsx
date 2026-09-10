@@ -1,15 +1,23 @@
+import { signIn } from "@/lib/auth";
+import styles from "../auth.module.css";
+
 export default function SignInPage() {
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center">
-      <div className="flex flex-col items-center gap-6">
-        <div className="flex items-center gap-2">
-          <span className="text-white font-bold text-3xl tracking-tight">Axe</span>
-        </div>
-        <p className="text-zinc-400 text-sm text-center max-w-xs">
-          Axe currently uses public X account information and does not require
-          you to connect or authorize your X account.
+    <main className={styles.page}>
+      <section className={styles.card}>
+        <div className={styles.mark}>A</div>
+        <p className={styles.eyebrow}>Axe account</p>
+        <h1>Sign in to continue</h1>
+        <p className={styles.copy}>
+          Use Google to access your Axe account. This never connects or authorizes your X account.
         </p>
-      </div>
-    </div>
+        <form action={async () => {
+          "use server";
+          await signIn("google", { redirectTo: "/account" });
+        }}>
+          <button className={styles.primary} type="submit">Continue with Google</button>
+        </form>
+      </section>
+    </main>
   );
 }

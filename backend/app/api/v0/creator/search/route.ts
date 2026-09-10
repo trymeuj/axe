@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { searchUsers } from "@/lib/xapi";
+import { requirePaidExtension } from "@/lib/extension-auth";
 
 // GET /api/v0/creator/search?q=level
 export async function GET(req: NextRequest) {
+  const access = await requirePaidExtension(req);
+  if (!access.ok) return access.response;
+
   const query = req.nextUrl.searchParams.get("q")?.replace("@", "").trim();
 
   if (!query || query.length < 2) {

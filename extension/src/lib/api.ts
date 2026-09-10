@@ -1,25 +1,48 @@
+import { clearExtensionToken, getExtensionToken } from "./auth";
+
 const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:3000";
 
 async function apiFetch<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
+  const token = await getExtensionToken();
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
   });
 
   if (!res.ok) {
+    if (res.status === 401 && token) await clearExtensionToken();
     const err = await res.json().catch(() => ({ error: "Request failed" }));
     throw new Error(err.error ?? "Request failed");
   }
 
+  if (res.status === 204) return undefined as T;
   return res.json();
 }
+
+export type ExtensionAccess = {
+  authenticated: boolean;
+  paid: boolean;
+  user: { email: string; name: string | null; image: string | null } | null;
+};
+
+export type ExtensionConnection = {
+  connectionId: string;
+  pollSecret: string;
+  connectUrl: string;
+  expiresAt: string;
+};
+
+export type ExtensionExchange =
+  | { status: "pending" }
+  | { status: "connected"; token: string; expiresAt: string; access: ExtensionAccess };
 
 export type MeResponse = {
   username: string;
@@ -113,6 +136,21 @@ export type ReplyIdea = {
 
 // Auth-less (v0) API — used by extension
 export const api = {
+  startExtensionConnection: () =>
+    apiFetch<ExtensionConnection>("/api/extension/connect/start", { method: "POST" }),
+
+  exchangeExtensionConnection: (connectionId: string, pollSecret: string) =>
+    apiFetch<ExtensionExchange>("/api/extension/connect/exchange", {
+      method: "POST",
+      body: JSON.stringify({ connectionId, pollSecret }),
+    }),
+
+  getExtensionAccess: () => apiFetch<ExtensionAccess>("/api/extension/access"),
+
+  revokeExtensionAccess: () => apiFetch<void>("/api/extension/access", { method: "DELETE" }),
+
+  accountUrl: `${API_BASE}/account`,
+
   discoverPosts: (usernames: string[]) =>
     apiFetch<CombinedDiscovery>("/api/v0/posts/discover", {
       method: "POST",

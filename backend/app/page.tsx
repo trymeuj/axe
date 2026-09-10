@@ -89,6 +89,14 @@ function StoreArrowIcon() {
   );
 }
 
+function XLogo({ className = "" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.451-6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z" />
+    </svg>
+  );
+}
+
 function PostActions({ animated = false }: { animated?: boolean }) {
   return (
     <div className={`post-actions${animated ? " post-actions--animated" : ""}`}>
@@ -125,7 +133,6 @@ function AxeIdentity({ label }: { label?: string }) {
         {label && <span className="post-context">{label}</span>}
         <div className="post-author__line">
           <strong>Axe</strong>
-          <VerifiedIcon />
           <span>@useaxe</span>
         </div>
       </div>
@@ -152,125 +159,94 @@ export default function Home() {
             target="_blank"
             rel="noreferrer"
           >
-            Add to Chrome
+            Get Axe — free
           </a>
         </div>
       </header>
 
-      <section className="timeline-hero" aria-labelledby="hero-title">
-        <div className="timeline-shell">
-          <aside className="timeline-rail timeline-rail--left" aria-hidden="true">
-            <div className="rail-item rail-item--active">
-              <span className="rail-home" />
-              <span>Home</span>
-            </div>
-            <div className="rail-item">
-              <span className="rail-search" />
-              <span>Explore</span>
-            </div>
-            <div className="rail-item">
-              <span className="rail-bell" />
-              <span>Notifications</span>
-            </div>
-          </aside>
-
-          <div className="timeline-feed">
-            <div className="feed-header">
-              <strong>For you</strong>
-              <span />
-            </div>
-
-            <div className="hero-posts">
-              <article className="x-post x-post--original">
-                <a
-                  className="post-link-overlay"
-                  href={JUSTIN_POST_URL}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label="Open Justin Welsh's original post on X"
-                />
-                <div className="post-author">
-                  <img
-                    className="post-avatar"
-                    src="/avatars/justin-welsh.jpg"
-                    alt="Justin Welsh"
-                    width="52"
-                    height="52"
-                  />
-                  <div className="post-author__identity">
-                    <div className="post-author__line">
-                      <strong>Justin Welsh</strong>
-                      <VerifiedIcon />
-                      <span>@thejustinwelsh · Jul 25, 2022</span>
-                    </div>
-                  </div>
-                  <span className="post-more"><MoreIcon /></span>
-                </div>
-
-                <div className="post-body" id="hero-title">
-                  <p>Twitter observation:</p>
-                  <p>
-                    Accounts growing crazy fast don&apos;t have the best content.
-                  </p>
-                  <p>They have:</p>
-                  <ol>
-                    <li>A clear profile: What are they doing? Why should you follow?</li>
-                    <li>Helpful content: Educating their audience daily</li>
-                    <li>Deep network: They engage regularly</li>
-                  </ol>
-                  <p>Nothing fancy.</p>
-                  <p>All meaningful.</p>
-                </div>
-
-                <PostActions animated />
-              </article>
-
-              <div className="quote-connector" aria-hidden="true">
-                <span />
-                <span className="quote-connector__label">Quote</span>
-              </div>
-
-              <article className="x-post x-post--axe">
-                <AxeIdentity label="Axe quoted" />
-                <span className="post-more"><MoreIcon /></span>
-                <div className="axe-statement">
-                  <p>Showing up consistently is the hard part.</p>
-                  <h1>Axe guarantees that.</h1>
-                  <a
-                    className="hero-install"
-                    href={CHROME_WEB_STORE_URL}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <span>
-                      Add Axe to Chrome
-                      <small>Free on the Chrome Web Store</small>
-                    </span>
-                    <StoreArrowIcon />
-                  </a>
-                </div>
-                <div className="post-actions post-actions--axe" aria-hidden="true">
-                  <span className="post-action"><span className="post-action__icon"><ReplyIcon /></span></span>
-                  <span className="post-action"><span className="post-action__icon"><RepostIcon /></span></span>
-                  <span className="post-action"><span className="post-action__icon"><LikeIcon /></span></span>
-                  <span className="post-action"><span className="post-action__icon"><BookmarkIcon /></span></span>
-                  <span className="post-action"><span className="post-action__icon"><ShareIcon /></span></span>
-                </div>
-              </article>
-            </div>
+      <section className="conversion-hero" aria-labelledby="hero-title">
+        <div className="conversion-hero__glow" aria-hidden="true" />
+        <div className="conversion-hero__inner">
+          <div className="conversion-copy">
+            <h1 id="hero-title">
+              <span className="conversion-line conversion-line--one">
+                Trying to stay consistent on <XLogo className="headline-x-logo" />
+              </span>
+              <span className="conversion-line conversion-line--two">
+                Don&apos;t know what to post daily?
+              </span>
+              <strong className="conversion-line conversion-line--answer">
+                Solve it with Axe and hit bangers.
+              </strong>
+            </h1>
+            <a
+              className="conversion-cta"
+              href={CHROME_WEB_STORE_URL}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span className="conversion-cta__x" aria-hidden="true"><XLogo /></span>
+              <span>Add Axe to Chrome</span>
+              <StoreArrowIcon />
+            </a>
+            <span className="conversion-note">Free Chrome extension</span>
           </div>
 
-          <aside className="timeline-rail timeline-rail--right">
-            <div className="search-pill" aria-hidden="true">Search</div>
-            <div className="rail-card">
-              <span className="rail-card__eyebrow">Your weekly rhythm</span>
-              <strong>35</strong>
-              <p>meaningful replies</p>
-              <span className="rail-card__status">
-                <i /> 5 every day
-              </span>
+          <div className="product-stage" aria-label="Axe creator tracking interface preview">
+            <div className="product-stage__halo" aria-hidden="true" />
+            <div className="product-window">
+              <div className="product-window__topbar">
+                <div className="product-window__brand">
+                  <AxeMark />
+                  <div>
+                    <strong>Axe</strong>
+                    <span>Your writing compass</span>
+                  </div>
+                </div>
+                <span className="window-dots" aria-hidden="true"><i /><i /><i /></span>
+              </div>
+
+              <div className="product-tabs">
+                <span>Posts</span>
+                <span className="active">Creators</span>
+              </div>
+
+              <div className="product-content">
+                <div className="product-heading">
+                  <div>
+                    <span>YOUR CIRCLE</span>
+                    <h2>Creators</h2>
+                  </div>
+                  <strong>3</strong>
+                </div>
+
+                <div className="creator-search">
+                  <span>@</span>
+                  <span>Add a creator</span>
+                  <button type="button" tabIndex={-1}>Add</button>
+                </div>
+
+                <div className="creator-preview-list">
+                  <article className="creator-preview-card">
+                    <img src="/avatars/levelsio.jpg" alt="" width="48" height="48" />
+                    <div><strong>Pieter Levels</strong><span>@levelsio · 954.2K followers</span></div>
+                    <span className="creator-preview-remove">×</span>
+                  </article>
+                  <article className="creator-preview-card">
+                    <img src="/avatars/marclou.jpg" alt="" width="48" height="48" />
+                    <div><strong>Marc Lou</strong><span>@marclou · 392.6K followers</span></div>
+                    <span className="creator-preview-remove">×</span>
+                  </article>
+                  <article className="creator-preview-card">
+                    <img src="/avatars/justin-welsh-current.jpg" alt="" width="48" height="48" />
+                    <div><strong>Justin Welsh</strong><span>@thejustinwelsh · 588.6K followers</span></div>
+                    <span className="creator-preview-remove">×</span>
+                  </article>
+                </div>
+              </div>
             </div>
-          </aside>
+            <span className="product-side-tab" aria-hidden="true">Axe</span>
+          </div>
         </div>
 
         <ScrollCue />
@@ -279,12 +255,12 @@ export default function Home() {
       <section className="x-workflow" id="how-it-works" aria-labelledby="workflow-title">
         <div className="workflow-shell">
           <div className="workflow-metric">
-            <span className="workflow-metric__eyebrow">A habit that compounds</span>
+            <span className="workflow-metric__eyebrow">Don&apos;t miss the good ones</span>
             <div className="workflow-metric__number" aria-hidden="true">
               <span>35</span>
             </div>
             <h2 id="workflow-title">replies per week</h2>
-            <p>Five good conversations a day. No blank page.</p>
+            <p>Five solid conversations a day. No staring at the timeline.</p>
             <div className="week-dots" aria-label="Seven active days">
               {Array.from({ length: 7 }).map((_, index) => (
                 <span key={index} style={{ "--dot": index } as CSSProperties} />
@@ -296,7 +272,7 @@ export default function Home() {
             <div className="thread-header">
               <div>
                 <span>Thread</span>
-                <strong>How Axe gets you replying</strong>
+                <strong>How your five show up</strong>
               </div>
               <MoreIcon />
             </div>
@@ -304,7 +280,7 @@ export default function Home() {
             <article className="thread-post thread-post--like">
               <AxeIdentity />
               <div className="thread-post__body">
-                <p>Replying is the way to grow on X.</p>
+                <p>Your favorite creators are already posting.</p>
                 <span className="thread-action thread-action--like">
                   <span><LikeIcon /></span>
                   Like
@@ -315,7 +291,7 @@ export default function Home() {
             <article className="thread-post thread-post--bookmark">
               <AxeIdentity />
               <div className="thread-post__body">
-                <p>Track creators that inspire you.</p>
+                <p>Axe spots the posts going off.</p>
                 <span className="thread-action thread-action--bookmark">
                   <span><BookmarkIcon /></span>
                   Bookmark
@@ -326,14 +302,77 @@ export default function Home() {
             <article className="thread-post thread-post--repost">
               <AxeIdentity />
               <div className="thread-post__body">
-                <p>Reply to their viral posts with Axe.</p>
+                <p>You get 5 solid ways to jump in.</p>
                 <span className="thread-action thread-action--green">
                   <span><RepostIcon /></span>
                   Repost
                 </span>
               </div>
             </article>
+
+            <div className="workflow-install">
+              <div>
+                <strong>Tomorrow&apos;s timeline won&apos;t wait.</strong>
+                <span>Your five are one click away.</span>
+              </div>
+              <a
+                href={CHROME_WEB_STORE_URL}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Get Axe — free
+                <StoreArrowIcon />
+              </a>
+            </div>
           </div>
+        </div>
+      </section>
+
+      <section className="proof-section" aria-label="The idea behind Axe">
+        <div className="proof-section__inner">
+          <div className="proof-copy">
+            <span>THE THESIS</span>
+            <h2>Showing up beats waiting for the perfect post.</h2>
+          </div>
+
+          <article className="x-post x-post--proof">
+            <a
+              className="post-link-overlay"
+              href={JUSTIN_POST_URL}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Open Justin Welsh's original post on X"
+            />
+            <div className="post-author">
+              <img
+                className="post-avatar"
+                src="/avatars/justin-welsh.jpg"
+                alt="Justin Welsh"
+                width="52"
+                height="52"
+              />
+              <div className="post-author__identity">
+                <div className="post-author__line">
+                  <strong>Justin Welsh</strong>
+                  <VerifiedIcon />
+                  <span>@thejustinwelsh · Jul 25, 2022</span>
+                </div>
+              </div>
+              <span className="post-more"><MoreIcon /></span>
+            </div>
+            <div className="post-body">
+              <p>Twitter observation:</p>
+              <p>Accounts growing crazy fast don&apos;t have the best content.</p>
+              <p>They have:</p>
+              <ol>
+                <li>A clear profile</li>
+                <li>Helpful content, daily</li>
+                <li>A deep network built through regular engagement</li>
+              </ol>
+              <p>Nothing fancy. All meaningful.</p>
+            </div>
+            <PostActions animated />
+          </article>
         </div>
       </section>
 

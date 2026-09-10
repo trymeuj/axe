@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateReplyIdeas } from "@/lib/ai";
+import { requirePaidExtension } from "@/lib/extension-auth";
 
-// Public (auth-less): POST /api/v0/reply-ideas
 // Body: { tweetText, creatorUsername, userFollowerCount? }
 export async function POST(req: NextRequest) {
+  const access = await requirePaidExtension(req);
+  if (!access.ok) return access.response;
+
   const body = await req.json();
   const {
     tweetText,
