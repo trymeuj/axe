@@ -159,7 +159,7 @@ a {
 }
 
 .x-header__signin:hover {
-  background: var(--x-hover);
+  background: rgba(239, 243, 244, 0.1);
   color: #fff;
 }
 

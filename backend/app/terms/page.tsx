@@ -12,7 +12,7 @@ export default function TermsPage() {
     <LegalShell
       eyebrow="Terms"
       title="Use Axe thoughtfully."
-      intro="These terms govern the current free Axe alpha, website, and browser extension."
+      intro="These terms govern the Axe website, service, and browser extension."
     >
       <section>
         <h2>Agreement</h2>
@@ -30,18 +30,18 @@ export default function TermsPage() {
       <section>
         <h2>The current service</h2>
         <p>
-          Axe is currently offered as a free alpha. It helps users discover
-          recent public X posts from selected creators, see AI-assisted thinking
-          directions, write their own draft, and copy it for use on X.
+          Axe helps users discover recent public X posts from selected creators,
+          see AI-assisted thinking directions, write their own draft, and copy
+          it for use on X.
         </p>
         <p className={styles.note}>
           Axe does not post automatically. You decide what to write, whether to
           publish it, and remain responsible for your final post.
         </p>
         <p>
-          If paid plans are introduced, pricing, renewal, cancellation, refund,
-          and payment terms will be shown before you purchase. No paid
-          subscription terms apply to the current free alpha.
+          Access to Axe may require payment. Applicable pricing, renewal,
+          cancellation, refund, and payment terms will be shown before you
+          purchase.
         </p>
       </section>
 

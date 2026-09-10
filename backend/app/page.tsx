@@ -163,7 +163,7 @@ export default function Home() {
               target="_blank"
               rel="noreferrer"
             >
-              Get Axe — free
+              Get Axe
             </a>
           </div>
         </div>
@@ -194,7 +194,7 @@ export default function Home() {
               <span>Add Axe to Chrome</span>
               <StoreArrowIcon />
             </a>
-            <span className="conversion-note">Free Chrome extension</span>
+            <span className="conversion-note">Chrome extension for X</span>
           </div>
 
           <div className="product-stage" aria-label="Axe creator tracking interface preview">
@@ -325,7 +325,7 @@ export default function Home() {
                 target="_blank"
                 rel="noreferrer"
               >
-                Get Axe — free
+                Get Axe
                 <StoreArrowIcon />
               </a>
             </div>
