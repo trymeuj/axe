@@ -238,7 +238,7 @@ function AccessGate({
   onDisconnect?: () => void;
 }) {
   return (
-    <div className="axe-access-shell">
+    <div className="axe-shell axe-access-shell">
       <div className="axe-access-card axe-fade-in">
         <div className="axe-logo"><span>A</span></div>
         {mode === "loading" ? (
