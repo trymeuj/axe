@@ -58,9 +58,10 @@ This checklist reflects Axe as it exists now and the work required to put it in 
 - [x] Create local Privacy, Terms, and Support pages and connect them from the landing-page footer
 - [x] Finish Chrome Web Store developer registration and payment
 - [x] Publish privacy, terms, and support pages on the Axe domain
-- [ ] Prepare the Chrome Web Store icon, screenshots, descriptions, privacy disclosures, and permission explanations (everything is saved except the required product screenshot)
+- [x] Prepare the Chrome Web Store icon, screenshots, descriptions, privacy disclosures, and permission explanations
 - [x] Create the unlisted Axe Web Store draft and upload production package `0.1.0`
-- [ ] Submit the extension as an unlisted Chrome Web Store listing and address any review feedback
+- [x] Submit extension version `0.1.1` as an unlisted Chrome Web Store listing
+- [ ] Wait for the current Chrome Web Store review and address feedback if Google requests changes
 - [x] Push the complete current local work to GitHub
 - [x] Deploy the latest backend to Vercel
 - [x] Verify TwitterAPI.io, OpenAI, and the ranked-post endpoint against the production deployment
@@ -69,6 +70,7 @@ This checklist reflects Axe as it exists now and the work required to put it in 
 - [ ] Test creator search, refresh, source navigation, restored Idea Slate, draft persistence, and Copy post in production
 - [ ] Write a short installation and first-use guide
 - [ ] Add a lightweight way for testers to report bad cards, bad directions, and product confusion
+- [x] Produce the Axe launch video and keep its working files local-only
 
 ## Paid access and account infrastructure
 
@@ -81,21 +83,21 @@ This checklist reflects Axe as it exists now and the work required to put it in 
 
 ### Website authentication and checkout
 
-Razorpay Subscriptions is implemented on `uj` against the disposable Test Mode plan. The items below remain open until the current Neon migration, test credentials, webhook, and end-to-end checkout are verified.
+Razorpay Subscriptions is deployed against the disposable Test Mode plan. Checkout and the webhook signature boundary are configured; lifecycle items remain open until the ₹1 end-to-end purchase and renewal-state tests are complete.
 
 - [x] Implement Google OAuth with Auth.js on the Axe website; do not add Clerk or X OAuth
 - [x] Create or link the corresponding Axe user in Neon after successful Google authentication
-- [ ] Create Google OAuth credentials, configure local and production callback URLs, and add the secrets locally and in Vercel
-- [ ] Complete a real Google sign-in end to end after credentials are configured
-- [ ] Add a website account and billing area showing access status and the appropriate payment action
-- [ ] Integrate Razorpay Checkout without collecting or storing raw card, UPI, or banking credentials in Axe
+- [x] Create Google OAuth credentials, configure the production callback URL, and add the production secrets in Vercel
+- [x] Complete a real Google sign-in end to end
+- [x] Add a website account and billing area showing access status and the appropriate payment action
+- [x] Integrate Razorpay Subscription Checkout without collecting or storing raw card, UPI, or banking credentials in Axe
 - [ ] Add verified Razorpay webhooks with signature validation, idempotent processing, and safe handling of delayed or repeated events
 - [ ] Add clear payment-success, payment-pending, payment-failure, cancellation, and retry experiences
 
 ### Database and paid entitlement
 
-- [ ] Add Neon records for users, linked Google identity, Razorpay customer/subscription/payment references, current entitlement, and auditable payment events
-- [ ] Store only the payment metadata Axe needs; Razorpay remains responsible for sensitive payment-method data
+- [x] Add Neon records for users, linked Google identity, Razorpay subscription/payment references, current entitlement, and auditable payment events
+- [x] Store only the payment metadata Axe needs; Razorpay remains responsible for sensitive payment-method data
 - [x] Make the backend—not local extension state—the source of truth for paid access
 - [x] Create an authenticated entitlement endpoint the extension can use to verify whether the signed-in user may use Axe
 - [ ] Decide how quickly cancellations, failed renewals, refunds, and manual access changes should affect extension access
@@ -105,7 +107,7 @@ Razorpay Subscriptions is implemented on `uj` against the disposable Test Mode p
 - [x] Add **Sign in with Google** to the extension using a secure, expiring, one-time Auth.js website-to-extension pairing flow
 - [x] Store a revocable extension session token on the device while keeping only its cryptographic hash in Neon
 - [x] Allow anyone to install the extension, but lock creator search, discovery, and other paid functionality until a valid entitlement is confirmed
-- [ ] Give unpaid users a clear route to purchase on the website and let newly paid users re-check access without reinstalling
+- [x] Give unpaid users a clear route to purchase on the website and let newly paid users re-check access without reinstalling
 - [ ] Handle expired sessions and temporary network failures without incorrectly granting access or trapping valid customers
 
 ### Security, launch, and operations
