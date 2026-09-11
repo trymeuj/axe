@@ -893,8 +893,18 @@ a {
 }
 
 .workflow-metric h2 {
-  margin: 14px 0 0;
+  margin: 9px 0 0;
   color: var(--x-text);
+  font-size: clamp(30px, 3.2vw, 48px);
+  font-weight: 720;
+  letter-spacing: -0.055em;
+  line-height: 1;
+}
+
+.workflow-metric__guarantee {
+  display: block;
+  margin-top: 18px;
+  color: var(--x-blue);
   font-size: clamp(30px, 3.2vw, 48px);
   font-weight: 720;
   letter-spacing: -0.055em;
@@ -1786,6 +1796,10 @@ a {
 
 .conversion-cta:hover svg {
   transform: translate(2px, -2px);
+}
+
+.fold-cta {
+  margin-top: 34px;
 }
 
 .conversion-note {
