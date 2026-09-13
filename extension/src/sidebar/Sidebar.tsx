@@ -34,6 +34,7 @@ function getSavedIdea(): IdeaSelection | null {
 export default function Sidebar() {
   const [access, setAccess] = useState<ExtensionAccess | null>(null);
   const [accessLoading, setAccessLoading] = useState(true);
+  const [openingComplete, setOpeningComplete] = useState(false);
   const [checkingAccess, setCheckingAccess] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [accessError, setAccessError] = useState("");
@@ -45,6 +46,11 @@ export default function Sidebar() {
   const [selectedIdea, setSelectedIdea] = useState<IdeaSelection | null>(getSavedIdea);
 
   useEffect(() => setTrackedCreators(creators), [creators]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setOpeningComplete(true), 900);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -114,7 +120,7 @@ export default function Sidebar() {
     }
   };
 
-  if (accessLoading) return <AccessGate mode="loading" />;
+  if (accessLoading || !openingComplete) return <AccessGate mode="loading" />;
   if (!access?.authenticated) {
     return <AccessGate mode="signed-out" connecting={connecting} error={accessError} onConnect={connectAccount} />;
   }
@@ -237,13 +243,22 @@ function AccessGate({
   onCheckAccess?: () => void;
   onDisconnect?: () => void;
 }) {
+  if (mode === "loading") {
+    return (
+      <div className="axe-shell axe-opening-shell" aria-label="Opening Axe">
+        <div className="axe-opening-lockup">
+          <div className="axe-logo axe-opening-logo"><span>A</span></div>
+          <p>Let&apos;s hit bangers.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="axe-shell axe-access-shell">
       <div className="axe-access-card axe-fade-in">
         <div className="axe-logo"><span>A</span></div>
-        {mode === "loading" ? (
-          <><MiniSpinner /><p>Checking access</p></>
-        ) : mode === "signed-out" ? (
+        {mode === "signed-out" ? (
           <>
             <p className="axe-access-kicker">Axe account</p>
             <h1>Activate Axe</h1>
