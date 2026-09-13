@@ -7,7 +7,14 @@ import {
   type CreatorSearchResult,
   type ExtensionAccess,
 } from "../lib/api";
-import { clearExtensionToken, getExtensionToken, setExtensionToken } from "../lib/auth";
+import {
+  clearCachedExtensionAccess,
+  clearExtensionToken,
+  getCachedExtensionAccess,
+  getExtensionToken,
+  setCachedExtensionAccess,
+  setExtensionToken,
+} from "../lib/auth";
 import {
   getCombinedDiscovery,
   getTrackedCreators,
@@ -34,7 +41,7 @@ function getSavedIdea(): IdeaSelection | null {
 export default function Sidebar() {
   const [access, setAccess] = useState<ExtensionAccess | null>(null);
   const [accessLoading, setAccessLoading] = useState(true);
-  const [openingComplete, setOpeningComplete] = useState(false);
+  const [showOpening, setShowOpening] = useState(false);
   const [checkingAccess, setCheckingAccess] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [accessError, setAccessError] = useState("");
@@ -48,15 +55,11 @@ export default function Sidebar() {
   useEffect(() => setTrackedCreators(creators), [creators]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setOpeningComplete(true), 900);
-    return () => window.clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
     let active = true;
     void (async () => {
       const token = await getExtensionToken();
       if (!token) {
+        await clearCachedExtensionAccess();
         if (active) {
           setAccess({ authenticated: false, paid: false, user: null });
           setAccessLoading(false);
@@ -64,13 +67,31 @@ export default function Sidebar() {
         return;
       }
 
+      const cachedAccess = await getCachedExtensionAccess();
+      if (cachedAccess) {
+        if (active) {
+          setAccess(cachedAccess);
+          setAccessLoading(false);
+        }
+        return;
+      }
+
+      const startedAt = Date.now();
+      if (active) setShowOpening(true);
       try {
         const currentAccess = await api.getExtensionAccess();
+        await setCachedExtensionAccess(currentAccess);
         if (active) setAccess(currentAccess);
       } catch {
         if (active) setAccess({ authenticated: false, paid: false, user: null });
       } finally {
-        if (active) setAccessLoading(false);
+        const remaining = Math.max(0, 900 - (Date.now() - startedAt));
+        window.setTimeout(() => {
+          if (active) {
+            setShowOpening(false);
+            setAccessLoading(false);
+          }
+        }, remaining);
       }
     })();
     return () => { active = false; };
@@ -90,6 +111,7 @@ export default function Sidebar() {
         const result = await api.exchangeExtensionConnection(connection.connectionId, connection.pollSecret);
         if (result.status === "connected") {
           await setExtensionToken(result.token);
+          await setCachedExtensionAccess(result.access);
           setAccess(result.access);
           return;
         }
@@ -112,7 +134,9 @@ export default function Sidebar() {
     setCheckingAccess(true);
     setAccessError("");
     try {
-      setAccess(await api.getExtensionAccess());
+      const currentAccess = await api.getExtensionAccess();
+      await setCachedExtensionAccess(currentAccess);
+      setAccess(currentAccess);
     } catch (error) {
       setAccessError(error instanceof Error ? error.message : "Could not check access right now.");
     } finally {
@@ -120,7 +144,9 @@ export default function Sidebar() {
     }
   };
 
-  if (accessLoading || !openingComplete) return <AccessGate mode="loading" />;
+  if (accessLoading) {
+    return showOpening ? <AccessGate mode="loading" /> : <div className="axe-shell axe-opening-shell" />;
+  }
   if (!access?.authenticated) {
     return <AccessGate mode="signed-out" connecting={connecting} error={accessError} onConnect={connectAccount} />;
   }
