@@ -2201,8 +2201,12 @@ a {
 @media (max-width: 560px) {
   .conversion-hero__inner {
     width: min(100% - 34px, 650px);
-    gap: 58px;
+    gap: 0;
     padding: 67px 0 92px;
+  }
+
+  .product-stage {
+    display: none;
   }
 
   .conversion-copy::before {
