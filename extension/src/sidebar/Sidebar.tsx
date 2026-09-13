@@ -45,6 +45,7 @@ export default function Sidebar() {
   const [checkingAccess, setCheckingAccess] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [accessError, setAccessError] = useState("");
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("posts");
   const [creators, setCreators] = useState<Creator[]>(getTrackedCreators);
   const [discovery, setDiscovery] = useState<CombinedDiscovery | null>(getCombinedDiscovery);
@@ -125,6 +126,7 @@ export default function Sidebar() {
   };
 
   const disconnectAccount = async () => {
+    setAccountMenuOpen(false);
     try { await api.revokeExtensionAccess(); } catch { /* Clear this device either way. */ }
     await clearExtensionToken();
     setAccess({ authenticated: false, paid: false, user: null });
@@ -162,6 +164,9 @@ export default function Sidebar() {
       />
     );
   }
+
+  const accountLabel = access.user?.name?.trim() || access.user?.email?.trim() || "Axe account";
+  const accountInitial = accountLabel.charAt(0).toUpperCase();
 
   const selectIdea = (creator: Creator, topic: CombinedPost) => {
     const selection = { creator, topic };
@@ -226,6 +231,27 @@ export default function Sidebar() {
           </nav>
           </>
         )}
+        <div className="axe-account-control">
+          <button
+            className="axe-account-avatar"
+            type="button"
+            aria-label={`Account menu for ${accountLabel}`}
+            aria-expanded={accountMenuOpen}
+            onClick={() => setAccountMenuOpen((open) => !open)}
+          >
+            {accountInitial}
+          </button>
+          {accountMenuOpen && (
+            <div className="axe-account-menu" role="menu">
+              <div className="axe-account-identity">
+                <strong>{access.user?.name || "Axe account"}</strong>
+                {access.user?.email && <span>{access.user.email}</span>}
+              </div>
+              <button type="button" role="menuitem" onClick={() => window.open(api.accountUrl, "_blank", "noopener,noreferrer")}>Manage account</button>
+              <button type="button" role="menuitem" onClick={disconnectAccount}>Sign out</button>
+            </div>
+          )}
+        </div>
       </header>
 
       <main className="axe-main">

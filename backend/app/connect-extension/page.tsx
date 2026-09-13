@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { auth, signIn } from "@/lib/auth";
+import { auth, signIn, signOut } from "@/lib/auth";
 import { approveExtensionConnection, getUserAccess } from "@/lib/extension-auth";
 import styles from "../auth/auth.module.css";
 
@@ -43,9 +43,7 @@ export default async function ConnectExtensionPage({ searchParams }: PageProps) 
         ) : (
           <>
             <h1>Connect this extension?</h1>
-            <p className={styles.copy}>
-              You are signed in as {session.user.email}. Only continue if you opened this page from Axe.
-            </p>
+            <p className={styles.copy}>Choose which Axe account to connect to this extension.</p>
             {!access?.paid && <p className={`${styles.identity} ${styles.warning}`}>Your account does not have paid access yet.</p>}
             {params.error && <p className={`${styles.identity} ${styles.warning}`}>This connection is invalid or expired.</p>}
             <form action={async () => {
@@ -55,7 +53,14 @@ export default async function ConnectExtensionPage({ searchParams }: PageProps) 
               const approved = await approveExtensionConnection(code, currentSession.user.id);
               redirect(`${returnTo}&${approved ? "connected=1" : "error=1"}`);
             }}>
-              <button className={styles.primary} type="submit">Connect Axe</button>
+              <button className={styles.primary} type="submit">Connect as {session.user.email}</button>
+            </form>
+            <form className={styles.compactForm} action={async () => {
+              "use server";
+              await signOut({ redirect: false });
+              await signIn("google", { redirectTo: returnTo }, { prompt: "select_account" });
+            }}>
+              <button className={styles.secondaryWide} type="submit">Use another Google account</button>
             </form>
           </>
         )}
