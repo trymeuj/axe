@@ -154,6 +154,7 @@ export default async function Home() {
           </a>
           <nav className="x-header__nav" aria-label="Primary navigation">
             <a href="#how-it-works">How it works</a>
+            <Link href="/pricing">Pricing</Link>
             <Link href="/privacy">Privacy</Link>
           </nav>
           <div className="x-header__actions">
@@ -169,7 +170,7 @@ export default async function Home() {
               target="_blank"
               rel="noreferrer"
             >
-              Get Axe
+              Get started with AXE
             </a>
           </div>
         </div>
@@ -197,10 +198,9 @@ export default async function Home() {
               rel="noreferrer"
             >
               <span className="conversion-cta__x" aria-hidden="true"><XLogo /></span>
-              <span>Add Axe to Chrome</span>
+              <span>Get started with AXE</span>
               <StoreArrowIcon />
             </a>
-            <span className="conversion-note">Chrome extension for X</span>
           </div>
 
           <div className="product-stage" aria-label="Axe creator tracking interface preview">
@@ -211,7 +211,6 @@ export default async function Home() {
                   <AxeMark />
                   <div>
                     <strong>Axe</strong>
-                    <span>Your writing compass</span>
                   </div>
                 </div>
                 <span className="window-dots" aria-hidden="true"><i /><i /><i /></span>
@@ -225,7 +224,6 @@ export default async function Home() {
               <div className="product-content">
                 <div className="product-heading">
                   <div>
-                    <span>YOUR CIRCLE</span>
                     <h2>Creators</h2>
                   </div>
                   <strong>3</strong>
@@ -266,75 +264,49 @@ export default async function Home() {
       <section className="x-workflow" id="how-it-works" aria-labelledby="workflow-title">
         <div className="workflow-shell">
           <div className="workflow-metric">
-            <span className="workflow-metric__eyebrow">Don&apos;t miss the good ones</span>
             <div className="workflow-metric__number" aria-hidden="true">
               <span>35</span>
             </div>
+            <span className="workflow-metric__guarantee">Guaranteed</span>
             <h2 id="workflow-title">replies per week</h2>
-            <p>Five solid conversations a day. No staring at the timeline.</p>
             <div className="week-dots" aria-label="Seven active days">
               {Array.from({ length: 7 }).map((_, index) => (
                 <span key={index} style={{ "--dot": index } as CSSProperties} />
               ))}
             </div>
+            <a
+              className="conversion-cta fold-cta"
+              href={CHROME_WEB_STORE_URL}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span className="conversion-cta__x" aria-hidden="true"><XLogo /></span>
+              <span>Get started with AXE</span>
+              <StoreArrowIcon />
+            </a>
           </div>
 
           <div className="workflow-thread">
-            <div className="thread-header">
-              <div>
-                <span>Thread</span>
-                <strong>How your five show up</strong>
-              </div>
-              <MoreIcon />
-            </div>
-
-            <article className="thread-post thread-post--like">
+            <article className="thread-post">
               <AxeIdentity />
               <div className="thread-post__body">
-                <p>Your favorite creators are already posting.</p>
-                <span className="thread-action thread-action--like">
-                  <span><LikeIcon /></span>
-                  Like
-                </span>
+                <p>Replying is the way to grow on X.</p>
               </div>
             </article>
 
-            <article className="thread-post thread-post--bookmark">
+            <article className="thread-post">
               <AxeIdentity />
               <div className="thread-post__body">
-                <p>Axe spots the posts going off.</p>
-                <span className="thread-action thread-action--bookmark">
-                  <span><BookmarkIcon /></span>
-                  Bookmark
-                </span>
+                <p>Attention is already here. Use it.</p>
               </div>
             </article>
 
-            <article className="thread-post thread-post--repost">
+            <article className="thread-post">
               <AxeIdentity />
               <div className="thread-post__body">
-                <p>You get 5 solid ways to jump in.</p>
-                <span className="thread-action thread-action--green">
-                  <span><RepostIcon /></span>
-                  Repost
-                </span>
+                <p>We live and breathe X so you don&apos;t have to.</p>
               </div>
             </article>
-
-            <div className="workflow-install">
-              <div>
-                <strong>Tomorrow&apos;s timeline won&apos;t wait.</strong>
-                <span>Your five are one click away.</span>
-              </div>
-              <a
-                href={CHROME_WEB_STORE_URL}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Get Axe
-                <StoreArrowIcon />
-              </a>
-            </div>
           </div>
         </div>
       </section>
@@ -342,8 +314,17 @@ export default async function Home() {
       <section className="proof-section" aria-label="The idea behind Axe">
         <div className="proof-section__inner">
           <div className="proof-copy">
-            <span>THE THESIS</span>
-            <h2>Showing up beats waiting for the perfect post.</h2>
+            <h2>Replying is the way to grow on X.</h2>
+            <a
+              className="conversion-cta fold-cta"
+              href={CHROME_WEB_STORE_URL}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span className="conversion-cta__x" aria-hidden="true"><XLogo /></span>
+              <span>Get started with AXE</span>
+              <StoreArrowIcon />
+            </a>
           </div>
 
           <article className="x-post x-post--proof">
