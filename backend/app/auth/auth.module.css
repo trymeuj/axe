@@ -8,6 +8,8 @@
 .primary { width: 100%; min-height: 50px; border: 0; border-radius: 999px; background: #f2f2f2; color: #08090a; font-size: 15px; font-weight: 780; cursor: pointer; transition: background 160ms ease, transform 160ms ease; }
 .primary:hover { background: #fff; transform: translateY(-1px); }
 .primary:disabled { cursor: wait; opacity: .68; transform: none; }
+.primaryLink { width: 100%; min-height: 50px; display: inline-flex; align-items: center; justify-content: center; margin-top: 24px; border-radius: 999px; background: #f2f2f2; color: #08090a; font-size: 15px; font-weight: 780; text-decoration: none; transition: background 160ms ease, transform 160ms ease; }
+.primaryLink:hover { background: #fff; transform: translateY(-1px); }
 .secondary { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; padding: 0 18px; border: 1px solid #30363d; border-radius: 999px; background: transparent; color: #f2f2f2; font-weight: 700; text-decoration: none; cursor: pointer; }
 .compactForm { margin-top: 10px !important; }
 .secondaryWide { width: 100%; min-height: 48px; border: 1px solid #30363d; border-radius: 999px; background: transparent; color: #f2f2f2; font-size: 14px; font-weight: 720; cursor: pointer; transition: border-color 160ms ease, background 160ms ease; }

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth, signOut } from "@/lib/auth";
 import { getUserAccess } from "@/lib/extension-auth";
@@ -22,6 +23,7 @@ export default async function AccountPage() {
         </p>
         <p className={styles.identity}>{session.user.email}</p>
         {!access.paid ? <SubscribeButton email={session.user.email} name={session.user.name} /> : null}
+        <Link className={styles.primaryLink} href="/">Go to website</Link>
         <form action={async () => {
           "use server";
           await signOut({ redirectTo: "/" });
