@@ -24,6 +24,13 @@ export async function getCurrentSubscription(userId: string) {
   });
 }
 
+export async function getLatestSubscription(userId: string) {
+  return db.query.razorpaySubscriptions.findFirst({
+    where: eq(razorpaySubscriptions.userId, userId),
+    orderBy: [desc(razorpaySubscriptions.createdAt)],
+  });
+}
+
 export async function saveCreatedSubscription(userId: string, subscription: RazorpaySubscription) {
   await db.insert(razorpaySubscriptions).values({
     id: subscription.id,
