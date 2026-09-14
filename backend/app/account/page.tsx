@@ -3,10 +3,16 @@ import { redirect } from "next/navigation";
 import { auth, signOut } from "@/lib/auth";
 import { getLatestSubscription } from "@/lib/billing";
 import { getUserAccess } from "@/lib/extension-auth";
+import { axePlanLabel } from "@/lib/razorpay";
 import styles from "../auth/auth.module.css";
 import { SubscribeButton } from "./SubscribeButton";
 
-export default async function AccountPage() {
+type AccountPageProps = {
+  searchParams: Promise<{ plan?: string; region?: string }>;
+};
+
+export default async function AccountPage({ searchParams }: AccountPageProps) {
+  const params = await searchParams;
   const session = await auth();
   if (!session?.user?.id) redirect("/auth/signin");
   const [access, subscription] = await Promise.all([
@@ -29,6 +35,8 @@ export default async function AccountPage() {
     : access.paid ? "Active" : "Not active";
   const subscriptionIsActive = !subscription || ["active", "authenticated"].includes(subscription.status);
   const periodLabel = subscription?.status === "cancelled" ? "Access until" : "Next renewal";
+  const selectedPlan = params.plan === "monthly" || params.plan === "quarterly" ? params.plan : null;
+  const selectedRegion = params.region === "india" || params.region === "standard" ? params.region : null;
 
   return (
     <main className={styles.page}>
@@ -47,7 +55,7 @@ export default async function AccountPage() {
             <div className={styles.subscriptionHeading}>
               <div>
                 <span>SUBSCRIPTION</span>
-                <h2 id="subscription-heading">Axe subscription</h2>
+                <h2 id="subscription-heading">{axePlanLabel(subscription.planId)}</h2>
               </div>
               <strong className={subscriptionIsActive ? undefined : styles.subscriptionStatusNeutral}>{subscriptionStatus}</strong>
             </div>
@@ -74,7 +82,16 @@ export default async function AccountPage() {
             </div>
           </section>
         ) : null}
-        {!access.paid ? <SubscribeButton email={session.user.email} name={session.user.name} /> : null}
+        {!access.paid && selectedPlan && selectedRegion ? (
+          <SubscribeButton
+            email={session.user.email}
+            name={session.user.name}
+            plan={selectedPlan}
+            region={selectedRegion}
+          />
+        ) : !access.paid ? (
+          <Link className={styles.primaryLink} href="/pricing">Choose a plan</Link>
+        ) : null}
         <Link className={styles.primaryLink} href="/">Go to website</Link>
         <form action={async () => {
           "use server";

@@ -1,6 +1,6 @@
 # Axe Active To-Do
 
-Last reviewed: 2026-09-11
+Last reviewed: 2026-09-14
 
 This file tracks only the current pipeline. Do not add speculative work unless it is explicitly requested.
 
@@ -14,7 +14,7 @@ This file tracks only the current pipeline. Do not add speculative work unless i
 - [x] Produce the launch video and keep its working files local-only
 - [x] Submit extension version `0.1.1` to the Chrome Web Store as an unlisted listing
 - [ ] Wait for the current Chrome Web Store review and respond only if Google requests changes
-- [ ] Decide Axe's launch price and billing period
+- [x] Decide Axe's launch prices and billing periods
 - [ ] Replace Razorpay Test Mode configuration with the final Live Mode plan, keys, and webhook
 - [ ] Give Axe to the first users
 

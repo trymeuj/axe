@@ -11,6 +11,30 @@ export type RazorpaySubscription = {
   total_count: number;
 };
 
+export type AxePlan = "monthly" | "quarterly";
+export type AxeRegion = "standard" | "india";
+
+const PLAN_CONFIG = {
+  "standard:monthly": { env: "RAZORPAY_PLAN_MONTHLY_ID", cycles: 120, label: "Monthly · $9.99" },
+  "standard:quarterly": { env: "RAZORPAY_PLAN_QUARTERLY_ID", cycles: 40, label: "Quarterly · $19.99" },
+  "india:monthly": { env: "RAZORPAY_PLAN_INDIA_MONTHLY_ID", cycles: 120, label: "India Monthly · $7.99" },
+  "india:quarterly": { env: "RAZORPAY_PLAN_INDIA_QUARTERLY_ID", cycles: 40, label: "India Quarterly · $15.99" },
+} as const;
+
+export function resolveAxePlan(plan: unknown, region: unknown) {
+  if (plan !== "monthly" && plan !== "quarterly") return null;
+  if (region !== "standard" && region !== "india") return null;
+  const config = PLAN_CONFIG[`${region}:${plan}`];
+  const planId = process.env[config.env] ?? process.env.RAZORPAY_PLAN_ID;
+  if (!planId) throw new Error(`${config.env} is not configured.`);
+  return { plan, region, planId, cycles: config.cycles };
+}
+
+export function axePlanLabel(planId: string) {
+  return Object.values(PLAN_CONFIG).find((config) => process.env[config.env] === planId)?.label
+    ?? "Axe subscription";
+}
+
 function credentials() {
   const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
   const keySecret = process.env.RAZORPAY_KEY_SECRET;
@@ -47,14 +71,7 @@ export function publicRazorpayKey() {
   return credentials().keyId;
 }
 
-export async function createRazorpaySubscription(userId: string) {
-  const planId = process.env.RAZORPAY_PLAN_ID;
-  if (!planId) throw new Error("RAZORPAY_PLAN_ID is not configured.");
-  const totalCount = Number.parseInt(process.env.RAZORPAY_SUBSCRIPTION_CYCLES ?? "120", 10);
-  if (!Number.isInteger(totalCount) || totalCount < 1) {
-    throw new Error("RAZORPAY_SUBSCRIPTION_CYCLES must be a positive integer.");
-  }
-
+export async function createRazorpaySubscription(userId: string, planId: string, totalCount: number) {
   return razorpayRequest<RazorpaySubscription>("/subscriptions", {
     method: "POST",
     body: JSON.stringify({

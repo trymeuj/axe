@@ -12,11 +12,13 @@ Axe uses Razorpay Subscriptions. Razorpay owns payment instruments; Axe stores o
 NEXT_PUBLIC_RAZORPAY_KEY_ID
 RAZORPAY_KEY_SECRET
 RAZORPAY_WEBHOOK_SECRET
-RAZORPAY_PLAN_ID
-RAZORPAY_SUBSCRIPTION_CYCLES
+RAZORPAY_PLAN_MONTHLY_ID
+RAZORPAY_PLAN_QUARTERLY_ID
+RAZORPAY_PLAN_INDIA_MONTHLY_ID
+RAZORPAY_PLAN_INDIA_QUARTERLY_ID
 ```
 
-The current test plan ID is `plan_TaRHVJ8Z4WtFX4`. Use `120` billing cycles for the monthly test plan.
+The checkout maps a server-validated plan and region selection to one of these four plan IDs. Monthly subscriptions use 120 billing cycles and quarterly subscriptions use 40.
 
 ## Webhook
 
@@ -43,4 +45,4 @@ Use a new random webhook secret and store the identical value as `RAZORPAY_WEBHO
 
 ## Production cutover
 
-After pricing is settled, create a new plan in Razorpay Live Mode. Add live keys, a new live webhook secret, the live plan ID, and the appropriate billing-cycle count to Vercel Production. Never reuse Test Mode credentials or the test webhook secret in Production.
+For Live Mode, add the live keys, a dedicated live webhook secret, and all four live plan IDs to Vercel Production. Never reuse Test Mode credentials or the test webhook secret in Production.

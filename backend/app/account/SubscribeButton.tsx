@@ -53,16 +53,34 @@ function loadCheckout() {
   return checkoutLoader;
 }
 
-export function SubscribeButton({ email, name }: { email?: string | null; name?: string | null }) {
+export function SubscribeButton({
+  email,
+  name,
+  plan,
+  region,
+}: {
+  email?: string | null;
+  name?: string | null;
+  plan: "monthly" | "quarterly";
+  region: "standard" | "india";
+}) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const price = region === "india"
+    ? plan === "monthly" ? "$7.99" : "$15.99"
+    : plan === "monthly" ? "$9.99" : "$19.99";
+  const period = plan === "monthly" ? "Monthly" : "Quarterly";
 
   async function startCheckout() {
     setBusy(true);
     setMessage("");
     try {
       const [response] = await Promise.all([
-        fetch("/api/billing/subscription", { method: "POST" }),
+        fetch("/api/billing/subscription", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan, region }),
+        }),
         loadCheckout(),
       ]);
       const data = await response.json() as { error?: string; subscriptionId?: string; keyId?: string };
@@ -75,7 +93,7 @@ export function SubscribeButton({ email, name }: { email?: string | null; name?:
         key: data.keyId,
         subscription_id: data.subscriptionId,
         name: "Axe",
-        description: "Axe access",
+        description: `Axe ${plan === "monthly" ? "Monthly" : "Quarterly"}`,
         prefill: { email: email ?? undefined, name: name ?? undefined },
         theme: { color: "#1d9bf0" },
         modal: { ondismiss: () => setBusy(false) },
@@ -111,7 +129,7 @@ export function SubscribeButton({ email, name }: { email?: string | null; name?:
   return (
     <div className={styles.checkoutAction}>
       <button className={styles.primary} type="button" onClick={startCheckout} disabled={busy}>
-        {busy ? "Opening secure checkout…" : "Get Axe"}
+        {busy ? "Opening secure checkout…" : `Continue with ${period} · ${price}`}
       </button>
       {message ? <p className={styles.checkoutMessage} role="status">{message}</p> : null}
       <small className={styles.paymentNote}>Secure recurring payment powered by Razorpay.</small>
