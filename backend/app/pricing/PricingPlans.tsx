@@ -41,26 +41,26 @@ export function PricingPlans({ destination }: { destination: string }) {
             onChange={(event) => setIndiaPricing(event.target.checked)}
           />
           <span className={styles.checkbox} aria-hidden="true"><CheckIcon /></span>
-          <span>Pricing for Indian addresses</span>
+          <span>I am based in India</span>
         </label>
         <span className={styles.infoWrap}>
           <button
             className={styles.infoButton}
             type="button"
-            aria-label="India pricing information"
+            aria-label="India regional pricing verification information"
             aria-describedby="india-pricing-tooltip"
           >
             i
           </button>
           <span className={styles.tooltip} id="india-pricing-tooltip" role="tooltip">
-            Select this to use Axe&apos;s India plans.
+            Address will be verified at checkout.
           </span>
         </span>
       </div>
 
       {indiaPricing ? (
         <p className={styles.regionApplied} role="status">
-          India pricing applied.
+          India regional pricing applied. Billing country will be verified at checkout.
         </p>
       ) : null}
 
