@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
+import { PricingPlans } from "./PricingPlans";
 import styles from "./pricing.module.css";
 
 export const metadata: Metadata = {
@@ -8,22 +9,8 @@ export const metadata: Metadata = {
   description: "Simple monthly and quarterly pricing for Axe.",
 };
 
-const features = [
-  "Track up to 5 creators",
-  "Recommendations on how you can jump in",
-  "3 refreshes a day",
-];
-
 function AxeMark() {
   return <span className={styles.mark} aria-hidden="true">A</span>;
-}
-
-function CheckIcon() {
-  return (
-    <svg viewBox="0 0 20 20" aria-hidden="true">
-      <path d="m4.5 10.2 3.4 3.4 7.7-7.7" />
-    </svg>
-  );
 }
 
 export default async function PricingPage() {
@@ -45,61 +32,11 @@ export default async function PricingPage() {
       <section className={styles.pricing} aria-labelledby="pricing-title">
         <div className={styles.intro}>
           <span>PRICING</span>
-          <h1 id="pricing-title">Stay consistent on X.</h1>
+          <h1 id="pricing-title">You know you&apos;ll do it once you have paid for it</h1>
           <p>Same Axe. Pick how you want to pay.</p>
         </div>
 
-        <div className={styles.plans}>
-          <article className={styles.plan}>
-            <div className={styles.planTop}>
-              <div>
-                <span className={styles.planName}>Monthly</span>
-                <div className={styles.price}>
-                  <strong>$9.99</strong>
-                  <span>USD / month</span>
-                </div>
-              </div>
-            </div>
-
-            <ul className={styles.features}>
-              {features.map((feature) => (
-                <li key={feature}><CheckIcon /><span>{feature}</span></li>
-              ))}
-            </ul>
-
-            <Link className={styles.planCta} href={destination}>
-              Get started with AXE
-              <span aria-hidden="true">↗</span>
-            </Link>
-            <p className={styles.billingNote}>Billed monthly. Cancel anytime.</p>
-          </article>
-
-          <article className={`${styles.plan} ${styles.featured}`}>
-            <div className={styles.featuredGlow} aria-hidden="true" />
-            <div className={styles.planTop}>
-              <div>
-                <span className={styles.planName}>Quarterly</span>
-                <div className={styles.price}>
-                  <strong>$19.99</strong>
-                  <span>USD / 3 months</span>
-                </div>
-              </div>
-              <span className={styles.saving}>SAVE $10</span>
-            </div>
-
-            <ul className={styles.features}>
-              {features.map((feature) => (
-                <li key={feature}><CheckIcon /><span>{feature}</span></li>
-              ))}
-            </ul>
-
-            <Link className={`${styles.planCta} ${styles.primaryCta}`} href={destination}>
-              Get started with AXE
-              <span aria-hidden="true">↗</span>
-            </Link>
-            <p className={styles.billingNote}>Billed every 3 months. Cancel anytime.</p>
-          </article>
-        </div>
+        <PricingPlans destination={destination} />
 
         <p className={styles.cancelNote}>
           Cancel anytime. Your access continues until the end of your billing period.
