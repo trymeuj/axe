@@ -67,7 +67,7 @@ export function SubscribeButton({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const price = region === "india"
-    ? plan === "monthly" ? "$7.99" : "$15.99"
+    ? plan === "monthly" ? "₹799" : "₹1,599"
     : plan === "monthly" ? "$9.99" : "$19.99";
   const period = plan === "monthly" ? "Monthly" : "Quarterly";
 

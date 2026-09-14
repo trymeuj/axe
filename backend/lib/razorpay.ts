@@ -17,8 +17,8 @@ export type AxeRegion = "standard" | "india";
 const PLAN_CONFIG = {
   "standard:monthly": { env: "RAZORPAY_PLAN_MONTHLY_ID", cycles: 120, label: "Monthly · $9.99" },
   "standard:quarterly": { env: "RAZORPAY_PLAN_QUARTERLY_ID", cycles: 40, label: "Quarterly · $19.99" },
-  "india:monthly": { env: "RAZORPAY_PLAN_INDIA_MONTHLY_ID", cycles: 120, label: "India Monthly · $7.99" },
-  "india:quarterly": { env: "RAZORPAY_PLAN_INDIA_QUARTERLY_ID", cycles: 40, label: "India Quarterly · $15.99" },
+  "india:monthly": { env: "RAZORPAY_PLAN_INDIA_MONTHLY_ID", cycles: 120, label: "India Monthly · ₹799" },
+  "india:quarterly": { env: "RAZORPAY_PLAN_INDIA_QUARTERLY_ID", cycles: 40, label: "India Quarterly · ₹1,599" },
 } as const;
 
 export function resolveAxePlan(plan: unknown, region: unknown) {
