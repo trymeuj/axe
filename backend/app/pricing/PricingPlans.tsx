@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import styles from "./pricing.module.css";
 
 const features = [
@@ -27,18 +26,18 @@ function checkoutDestination(destination: string, period: "monthly" | "quarterly
 }
 
 export function PricingPlans({ destination }: { destination: string }) {
-  const [indiaPricing, setIndiaPricing] = useState(false);
-  const monthlyPrice = indiaPricing ? "$7.99" : "$9.99";
-  const quarterlyPrice = indiaPricing ? "$15.99" : "$19.99";
+  const indiaPricing = true;
+  const monthlyPrice = "$7.99";
+  const quarterlyPrice = "$15.99";
 
   return (
     <>
       <div className={styles.regionControl}>
-        <label className={styles.regionCheck}>
+        <label className={`${styles.regionCheck} ${styles.regionCheckLocked}`}>
           <input
             type="checkbox"
             checked={indiaPricing}
-            onChange={(event) => setIndiaPricing(event.target.checked)}
+            disabled
           />
           <span className={styles.checkbox} aria-hidden="true"><CheckIcon /></span>
           <span>I am based in India</span>
@@ -47,13 +46,13 @@ export function PricingPlans({ destination }: { destination: string }) {
           <button
             className={styles.infoButton}
             type="button"
-            aria-label="India regional pricing verification information"
+            aria-label="Pricing availability information"
             aria-describedby="india-pricing-tooltip"
           >
             i
           </button>
           <span className={styles.tooltip} id="india-pricing-tooltip" role="tooltip">
-            Address will be verified at checkout.
+            Soon available outside India.
           </span>
         </span>
       </div>

@@ -115,6 +115,10 @@
   user-select: none;
 }
 
+.regionCheckLocked {
+  cursor: default;
+}
+
 .regionCheck input {
   position: absolute;
   width: 1px;
