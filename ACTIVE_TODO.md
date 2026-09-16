@@ -15,7 +15,8 @@ This file tracks only the current pipeline. Do not add speculative work unless i
 - [x] Submit extension version `0.1.1` to the Chrome Web Store as an unlisted listing
 - [ ] Wait for the current Chrome Web Store review and respond only if Google requests changes
 - [x] Decide Axe's launch prices and billing periods
-- [ ] Replace Razorpay Test Mode configuration with the final Live Mode plan, keys, and webhook
+- [x] Configure the four final Razorpay Live Mode plans, keys, and webhook
+- [ ] Wait for Razorpay to approve `axe.oddpages.site`, then verify one live subscription and extension unlock
 - [ ] Give Axe to the first users
 
 ## Deferred

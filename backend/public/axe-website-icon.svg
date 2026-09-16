@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Axe</title>
+  <circle cx="256" cy="256" r="256" fill="#e7e9ea"/>
+  <text
+    x="256"
+    y="267"
+    fill="#000000"
+    font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
+    font-size="256"
+    font-weight="850"
+    letter-spacing="-13"
+    text-anchor="middle"
+    dominant-baseline="middle"
+  >A</text>
+</svg>

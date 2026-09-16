@@ -386,8 +386,9 @@
 
 .cancelNote {
   margin: 26px auto 0;
-  color: var(--x-muted);
-  font-size: 13px;
+  color: #aab0b5;
+  font-size: 14px;
+  font-weight: 600;
   line-height: 1.5;
   text-align: center;
 }

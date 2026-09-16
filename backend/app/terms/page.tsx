@@ -39,9 +39,41 @@ export default function TermsPage() {
           publish it, and remain responsible for your final post.
         </p>
         <p>
-          Access to Axe may require payment. Applicable pricing, renewal,
-          cancellation, refund, and payment terms will be shown before you
-          purchase.
+          Access to Axe may require payment. Current prices and billing periods
+          are shown on the pricing page before purchase.
+        </p>
+      </section>
+
+      <section>
+        <h2>Billing, cancellation, and refunds</h2>
+        <p>
+          Axe subscriptions are billed in advance and renew automatically on the
+          monthly or quarterly billing schedule you select, unless cancelled.
+        </p>
+        <p>
+          You may cancel at any time by emailing{" "}
+          <a href="mailto:dev.ujjwal.mathur@gmail.com">
+            dev.ujjwal.mathur@gmail.com
+          </a>
+          . Cancellation stops the next renewal. Your paid access continues until
+          the end of the billing period you have already paid for.
+        </p>
+        <p>
+          Subscription charges are generally non-refundable. Axe does not provide
+          prorated refunds for unused time, change of mind, failure to use the
+          service, or forgetting to cancel before renewal.
+        </p>
+        <p>
+          A refund may be considered for a duplicate or incorrect charge, a
+          successful payment where paid access was not activated, an unresolved
+          technical failure that prevented meaningful use of Axe, or where a
+          refund is required by applicable law.
+        </p>
+        <p>
+          Eligible refund requests must be submitted within 7 days of the charge.
+          Approved refunds are returned to the original payment method and are
+          generally processed within 5–7 working days. Your bank or payment
+          provider may require additional time to reflect the refund.
         </p>
       </section>
 
