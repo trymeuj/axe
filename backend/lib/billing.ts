@@ -1,7 +1,8 @@
-import { and, desc, eq, inArray, isNull, lte, or } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, isNull, lte, or } from "drizzle-orm";
 import { db } from "@/db";
 import {
   entitlements,
+  polarSubscriptions,
   razorpayPayments,
   razorpaySubscriptions,
   razorpayWebhookEvents,
@@ -9,9 +10,54 @@ import {
 import type { RazorpaySubscription } from "@/lib/razorpay";
 
 const REUSABLE_STATUSES = ["created", "authenticated", "active", "pending"];
+const RAZORPAY_ACCESS_STATUSES = ["authenticated", "active", "pending", "halted", "cancelled", "completed", "paused"];
+const POLAR_ACCESS_STATUSES = ["active", "trialing"];
 
 function fromUnix(value: number | null | undefined) {
   return value ? new Date(value * 1000) : null;
+}
+
+type BillingTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+export async function recomputeEffectiveEntitlement(tx: BillingTransaction, userId: string) {
+  const now = new Date();
+  const [razorpay, polar] = await Promise.all([
+    tx.query.razorpaySubscriptions.findFirst({
+      where: and(
+        eq(razorpaySubscriptions.userId, userId),
+        inArray(razorpaySubscriptions.status, RAZORPAY_ACCESS_STATUSES),
+        gt(razorpaySubscriptions.currentEnd, now)
+      ),
+      orderBy: [desc(razorpaySubscriptions.currentEnd)],
+    }),
+    tx.query.polarSubscriptions.findFirst({
+      where: and(
+        eq(polarSubscriptions.userId, userId),
+        or(
+          inArray(polarSubscriptions.status, POLAR_ACCESS_STATUSES),
+          and(
+            eq(polarSubscriptions.status, "canceled"),
+            eq(polarSubscriptions.cancelAtPeriodEnd, true)
+          )
+        ),
+        gt(polarSubscriptions.currentPeriodEnd, now)
+      ),
+      orderBy: [desc(polarSubscriptions.currentPeriodEnd)],
+    }),
+  ]);
+
+  const candidates = [
+    razorpay?.currentEnd ? { until: razorpay.currentEnd, source: "razorpay_subscription" } : null,
+    polar?.currentPeriodEnd ? { until: polar.currentPeriodEnd, source: "polar_subscription" } : null,
+  ].filter((value): value is { until: Date; source: string } => Boolean(value));
+  const best = candidates.sort((a, b) => b.until.getTime() - a.until.getTime())[0];
+
+  await tx.update(entitlements).set({
+    status: best ? "active" : "unpaid",
+    validUntil: best?.until ?? null,
+    source: best?.source ?? "none",
+    updatedAt: now,
+  }).where(eq(entitlements.userId, userId));
 }
 
 export async function getCurrentSubscription(userId: string) {
@@ -83,19 +129,7 @@ export async function confirmSubscriptionCheckout(
       set: { status: "authenticated", updatedAt: new Date() },
     });
 
-    const paidThrough = fromUnix(subscription.current_end);
-    if (
-      (subscription.status === "authenticated" || subscription.status === "active")
-      && paidThrough
-      && paidThrough > new Date()
-    ) {
-      await tx.update(entitlements).set({
-        status: "active",
-        validUntil: paidThrough,
-        source: "razorpay_subscription",
-        updatedAt: new Date(),
-      }).where(eq(entitlements.userId, userId));
-    }
+    await recomputeEffectiveEntitlement(tx, userId);
   });
 }
 
@@ -168,20 +202,7 @@ export async function processSubscriptionWebhook(input: WebhookInput) {
 
     if (updated.length === 0) return { stale: true };
 
-    const paidThrough = fromUnix(input.subscription.current_end);
-    const active = ["authenticated", "active"].includes(input.subscription.status)
-      && paidThrough
-      && paidThrough > new Date();
-    const retainUntilEnd = ["pending", "halted", "cancelled", "completed", "paused"].includes(input.subscription.status)
-      && paidThrough
-      && paidThrough > new Date();
-
-    await tx.update(entitlements).set({
-      status: active || retainUntilEnd ? "active" : input.subscription.status,
-      validUntil: paidThrough,
-      source: "razorpay_subscription",
-      updatedAt: new Date(),
-    }).where(eq(entitlements.userId, existing.userId));
+    await recomputeEffectiveEntitlement(tx, existing.userId);
 
     return { processed: true };
   });

@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { getCurrentSubscription, saveCreatedSubscription } from "@/lib/billing";
 import { getUserAccess } from "@/lib/extension-auth";
 import { createRazorpaySubscription, publicRazorpayKey, resolveAxePlan } from "@/lib/razorpay";
+import { createPolarCheckout, resolvePolarProductId } from "@/lib/polar";
 
 export const runtime = "nodejs";
 export const maxDuration = 10;
@@ -20,7 +21,32 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json().catch(() => null) as Record<string, unknown> | null;
-    const selectedPlan = resolveAxePlan(body?.plan, body?.region);
+    const region = body?.region;
+    if (region !== "india" && region !== "standard") {
+      return NextResponse.json({ error: "Choose a valid Axe plan." }, { status: 400 });
+    }
+
+    if (region === "standard") {
+      if (!session.user.email) {
+        return NextResponse.json({ error: "Your account needs an email address for checkout." }, { status: 400 });
+      }
+      const selectedPlan = resolvePolarProductId(body?.plan);
+      if (!selectedPlan) {
+        return NextResponse.json({ error: "Choose a valid Axe plan." }, { status: 400 });
+      }
+      const checkout = await createPolarCheckout({
+        userId: session.user.id,
+        email: session.user.email,
+        name: session.user.name,
+        productId: selectedPlan.productId,
+      });
+      return NextResponse.json({
+        provider: "polar",
+        checkoutUrl: checkout.url,
+      }, { headers: { "Cache-Control": "no-store" } });
+    }
+
+    const selectedPlan = resolveAxePlan(body?.plan, region);
     if (!selectedPlan) {
       return NextResponse.json({ error: "Choose a valid Axe plan." }, { status: 400 });
     }
@@ -43,6 +69,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({
+      provider: "razorpay",
       subscriptionId,
       keyId: publicRazorpayKey(),
       email: session.user.email,

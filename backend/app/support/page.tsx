@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { CHROME_WEB_STORE_URL } from "@/lib/links";
 import { LegalShell } from "../components/LegalShell";
 import styles from "../legal.module.css";
 
@@ -29,10 +30,12 @@ export default function SupportPage() {
       <section>
         <h2>Installation</h2>
         <p>
-          Axe is being prepared for an unlisted Chrome Web Store release. When
-          approved, its private Store link will be published on the Axe landing
-          page. That link will provide normal installation and automatic updates
-          in Chrome and compatible Brave versions.
+          Install Axe from its{" "}
+          <a href={CHROME_WEB_STORE_URL} target="_blank" rel="noreferrer">
+            Chrome Web Store listing
+          </a>
+          . The Store provides normal installation and automatic updates in
+          Chrome and compatible Brave versions.
         </p>
         <p className={styles.note}>
           Axe only appears on <strong>x.com</strong> and <strong>twitter.com</strong>.

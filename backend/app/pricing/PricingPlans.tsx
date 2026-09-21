@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import styles from "./pricing.module.css";
 
 const features = [
@@ -26,18 +27,18 @@ function checkoutDestination(destination: string, period: "monthly" | "quarterly
 }
 
 export function PricingPlans({ destination }: { destination: string }) {
-  const indiaPricing = true;
-  const monthlyPrice = "$7.99";
-  const quarterlyPrice = "$15.99";
+  const [indiaPricing, setIndiaPricing] = useState(true);
+  const monthlyPrice = indiaPricing ? "₹799" : "$9.99";
+  const quarterlyPrice = indiaPricing ? "₹1,599" : "$19.99";
 
   return (
     <>
       <div className={styles.regionControl}>
-        <label className={`${styles.regionCheck} ${styles.regionCheckLocked}`}>
+        <label className={styles.regionCheck}>
           <input
             type="checkbox"
             checked={indiaPricing}
-            disabled
+            onChange={(event) => setIndiaPricing(event.target.checked)}
           />
           <span className={styles.checkbox} aria-hidden="true"><CheckIcon /></span>
           <span>I am based in India</span>
@@ -52,7 +53,7 @@ export function PricingPlans({ destination }: { destination: string }) {
             i
           </button>
           <span className={styles.tooltip} id="india-pricing-tooltip" role="tooltip">
-            Soon available outside India.
+            India uses Razorpay for UPI and local payments. Other countries use Polar.
           </span>
         </span>
       </div>
@@ -70,7 +71,7 @@ export function PricingPlans({ destination }: { destination: string }) {
               <span className={styles.planName}>Monthly</span>
               <div className={styles.price}>
                 <strong>{monthlyPrice}</strong>
-                <span>USD / month</span>
+                <span>{indiaPricing ? "INR / month" : "USD / month"}</span>
               </div>
             </div>
           </div>
@@ -98,7 +99,7 @@ export function PricingPlans({ destination }: { destination: string }) {
               <span className={styles.planName}>Quarterly</span>
               <div className={styles.price}>
                 <strong>{quarterlyPrice}</strong>
-                <span>USD / 3 months</span>
+                <span>{indiaPricing ? "INR / 3 months" : "USD / 3 months"}</span>
               </div>
             </div>
             <span className={styles.saving}>SAVE 33%</span>

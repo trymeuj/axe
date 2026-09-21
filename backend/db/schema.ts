@@ -1,4 +1,5 @@
 import {
+  boolean,
   integer,
   index,
   pgTable,
@@ -80,6 +81,39 @@ export const razorpayWebhookEvents = pgTable("razorpay_webhook_events", {
   eventType: text("event_type").notNull(),
   subscriptionId: text("subscription_id"),
   paymentId: text("payment_id"),
+  eventCreatedAt: timestamp("event_created_at"),
+  processedAt: timestamp("processed_at").defaultNow().notNull(),
+});
+
+export const polarSubscriptions = pgTable(
+  "polar_subscriptions",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    customerId: text("customer_id").notNull(),
+    productId: text("product_id").notNull(),
+    status: text("status").notNull(),
+    cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),
+    currentPeriodStart: timestamp("current_period_start"),
+    currentPeriodEnd: timestamp("current_period_end"),
+    endedAt: timestamp("ended_at"),
+    lastEventAt: timestamp("last_event_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    index("polar_subscriptions_user_idx").on(t.userId),
+    index("polar_subscriptions_customer_idx").on(t.customerId),
+  ]
+);
+
+export const polarWebhookEvents = pgTable("polar_webhook_events", {
+  id: text("id").primaryKey(),
+  eventType: text("event_type").notNull(),
+  customerId: text("customer_id"),
+  subscriptionId: text("subscription_id"),
   eventCreatedAt: timestamp("event_created_at"),
   processedAt: timestamp("processed_at").defaultNow().notNull(),
 });

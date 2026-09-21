@@ -4,6 +4,8 @@ import { auth, signOut } from "@/lib/auth";
 import { getLatestSubscription } from "@/lib/billing";
 import { getUserAccess } from "@/lib/extension-auth";
 import { axePlanLabel } from "@/lib/razorpay";
+import { getLatestPolarSubscription } from "@/lib/polar-billing";
+import { polarPlanLabel } from "@/lib/polar";
 import styles from "../auth/auth.module.css";
 import { SubscribeButton } from "./SubscribeButton";
 
@@ -15,10 +17,15 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
   const params = await searchParams;
   const session = await auth();
   if (!session?.user?.id) redirect("/auth/signin");
-  const [access, subscription] = await Promise.all([
+  const [access, razorpaySubscription, polarSubscription] = await Promise.all([
     getUserAccess(session.user.id),
     getLatestSubscription(session.user.id),
+    getLatestPolarSubscription(session.user.id),
   ]);
+  const usesPolar = Boolean(polarSubscription && (
+    !razorpaySubscription || polarSubscription.createdAt >= razorpaySubscription.createdAt
+  ));
+  const subscription = usesPolar ? polarSubscription : razorpaySubscription;
 
   const statusLabels: Record<string, string> = {
     active: "Active",
@@ -29,12 +36,19 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
     paused: "Paused",
     cancelled: "Cancelled",
     completed: "Completed",
+    trialing: "Trialing",
+    past_due: "Payment issue",
+    unpaid: "Unpaid",
+    revoked: "Ended",
   };
   const subscriptionStatus = subscription
     ? statusLabels[subscription.status] ?? subscription.status
     : access.paid ? "Active" : "Not active";
-  const subscriptionIsActive = !subscription || ["active", "authenticated"].includes(subscription.status);
-  const periodLabel = subscription?.status === "cancelled" ? "Access until" : "Next renewal";
+  const subscriptionIsActive = !subscription || ["active", "authenticated", "trialing"].includes(subscription.status);
+  const cancelAtPeriodEnd = usesPolar
+    ? polarSubscription?.cancelAtPeriodEnd
+    : razorpaySubscription?.status === "cancelled";
+  const periodLabel = cancelAtPeriodEnd ? "Access until" : "Next renewal";
   const selectedPlan = params.plan === "monthly" || params.plan === "quarterly" ? params.plan : null;
   const selectedRegion = params.region === "india" || params.region === "standard" ? params.region : null;
 
@@ -55,19 +69,27 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
             <div className={styles.subscriptionHeading}>
               <div>
                 <span>SUBSCRIPTION</span>
-                <h2 id="subscription-heading">{axePlanLabel(subscription.planId)}</h2>
+                <h2 id="subscription-heading">
+                  {usesPolar && polarSubscription
+                    ? polarPlanLabel(polarSubscription.productId)
+                    : razorpaySubscription ? axePlanLabel(razorpaySubscription.planId) : "Axe subscription"}
+                </h2>
               </div>
               <strong className={subscriptionIsActive ? undefined : styles.subscriptionStatusNeutral}>{subscriptionStatus}</strong>
             </div>
             <dl className={styles.subscriptionDetails}>
               <div>
                 <dt>{periodLabel}</dt>
-                <dd>{subscription.currentEnd ? formatAccountDate(subscription.currentEnd) : "Not available"}</dd>
+                <dd>
+                  {usesPolar && polarSubscription?.currentPeriodEnd
+                    ? formatAccountDate(polarSubscription.currentPeriodEnd)
+                    : razorpaySubscription?.currentEnd ? formatAccountDate(razorpaySubscription.currentEnd) : "Not available"}
+                </dd>
               </div>
-              <div>
+              {!usesPolar && razorpaySubscription ? <div>
                 <dt>Payments completed</dt>
-                <dd>{subscription.paidCount} of {subscription.totalCount}</dd>
-              </div>
+                <dd>{razorpaySubscription.paidCount} of {razorpaySubscription.totalCount}</dd>
+              </div> : null}
               <div>
                 <dt>Subscription ID</dt>
                 <dd className={styles.subscriptionId}>{subscription.id}</dd>
@@ -81,6 +103,11 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
               <strong>{subscriptionStatus}</strong>
             </div>
           </section>
+        ) : null}
+        {usesPolar && polarSubscription ? (
+          <Link className={styles.primaryLink} href="/api/billing/polar/portal">
+            Manage subscription
+          </Link>
         ) : null}
         {!access.paid && selectedPlan && selectedRegion ? (
           <SubscribeButton

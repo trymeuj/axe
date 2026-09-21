@@ -81,9 +81,19 @@ export function SubscribeButton({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ plan, region }),
         }),
-        loadCheckout(),
+        region === "india" ? loadCheckout() : Promise.resolve(),
       ]);
-      const data = await response.json() as { error?: string; subscriptionId?: string; keyId?: string };
+      const data = await response.json() as {
+        error?: string;
+        provider?: "polar" | "razorpay";
+        checkoutUrl?: string;
+        subscriptionId?: string;
+        keyId?: string;
+      };
+      if (response.ok && data.provider === "polar" && data.checkoutUrl) {
+        window.location.assign(data.checkoutUrl);
+        return;
+      }
       if (!response.ok || !data.subscriptionId || !data.keyId) {
         throw new Error(data.error ?? "Checkout could not be started.");
       }
@@ -132,7 +142,9 @@ export function SubscribeButton({
         {busy ? "Opening secure checkout…" : `Continue with ${period} · ${price}`}
       </button>
       {message ? <p className={styles.checkoutMessage} role="status">{message}</p> : null}
-      <small className={styles.paymentNote}>Secure recurring payment powered by Razorpay.</small>
+      <small className={styles.paymentNote}>
+        Secure recurring payment powered by {region === "india" ? "Razorpay" : "Polar"}.
+      </small>
     </div>
   );
 }

@@ -154,6 +154,7 @@ export default async function Home() {
           </a>
           <nav className="x-header__nav" aria-label="Primary navigation">
             <a href="#how-it-works">How it works</a>
+            <Link href="/resources">Resources</Link>
             <Link href="/pricing">Pricing</Link>
             <Link href="/privacy">Privacy</Link>
           </nav>
@@ -379,6 +380,7 @@ export default async function Home() {
             posted automatically.
           </p>
           <nav aria-label="Legal and support">
+            <Link href="/resources">Resources</Link>
             <Link href="/privacy">Privacy</Link>
             <Link href="/terms">Terms</Link>
             <Link href="/support">Support</Link>
