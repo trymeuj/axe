@@ -27,7 +27,7 @@ function checkoutDestination(destination: string, period: "monthly" | "quarterly
 }
 
 export function PricingPlans({ destination }: { destination: string }) {
-  const [indiaPricing, setIndiaPricing] = useState(true);
+  const [indiaPricing, setIndiaPricing] = useState(false);
   const monthlyPrice = indiaPricing ? "₹799" : "$9.99";
   const quarterlyPrice = indiaPricing ? "₹1,599" : "$19.99";
 

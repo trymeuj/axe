@@ -76,7 +76,7 @@ export async function POST(request: Request) {
       name: session.user.name,
     }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
-    console.error("Razorpay subscription creation failed", error instanceof Error ? error.message : "Unknown error");
+    console.error("Subscription checkout creation failed", error instanceof Error ? error.message : "Unknown error");
     return NextResponse.json({ error: "We could not start checkout. Please try again." }, { status: 503 });
   }
 }

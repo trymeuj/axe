@@ -31,7 +31,12 @@ export function isAxePolarProduct(productId: string) {
 }
 
 function appUrl() {
-  const configured = process.env.NEXT_PUBLIC_APP_URL;
+  const vercelProductionHost =
+    process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ?? process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL;
+  const configured = process.env.NEXT_PUBLIC_APP_URL
+    ?? (vercelProductionHost ? `https://${vercelProductionHost}` : undefined)
+    ?? (process.env.NODE_ENV === "production" ? "https://axe.oddpages.site" : undefined);
   if (!configured) throw new Error("NEXT_PUBLIC_APP_URL is not configured.");
   return new URL(configured);
 }
